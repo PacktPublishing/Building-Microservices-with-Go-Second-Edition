@@ -1,0 +1,7 @@
+github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/nicholasjackson/env v0.5.0 h1:AmVgGcvc/OjOw5JLQBQyyIYaBFy4eqtG0PyF+PAf9e4=
+github.com/nicholasjackson/env v0.5.0/go.mod h1:8PvK2K2IBkG9ANQ9TJq7D0EGIblM5hS5SglTXLkX/04=
+github.com/nicholasjackson/env v0.6.0 h1:6xdio52m7cKRtgZPER6NFeBZxicR88rx5a+5Jl4/qus=
+github.com/nicholasjackson/env v0.6.0/go.mod h1:/GtSb9a/BDUCLpcnpauN0d/Bw5ekSI1vLC1b9Lw0Vyk=
+github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
