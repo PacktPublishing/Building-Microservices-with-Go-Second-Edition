@@ -20,12 +20,19 @@ func main() {
 
 	l := log.New(os.Stdout, "products-api ", log.LstdFlags)
 
+	// create the handlers
 	hh := handlers.NewHello(l)
+	gh := handlers.NewGoodbye(l)
+
+	// create a new serve mux and register the handlers
+	sm := http.NewServeMux()
+	sm.Handle("/", hh)
+	sm.Handle("/goodbye", gh)
 
 	// create a new server
 	s := http.Server{
 		Addr:    *bindAddress, // configure the bind address
-		Handler: hh, // set the default handler
+		Handler: sm, // set the default handler
 		ErrorLog: l, // set the logger for the server
 		ReadTimeout: 5*time.Second, // max time to read request from the client
 		WriteTimeout: 5*time.Second, // max time to write response to the client

@@ -20,7 +20,7 @@ func NewHello(l *log.Logger) *Hello {
 // ServeHTTP implements the go http.Handler interface
 // https://golang.org/pkg/net/http/#Handler
 func (h *Hello) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	h.l.Println("Handle Hello requests")
+	h.l.Println("Handle requests")
 
 	// read the body
 	b, err := ioutil.ReadAll(r.Body)
