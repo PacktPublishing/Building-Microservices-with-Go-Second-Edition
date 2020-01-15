@@ -1,4 +1,4 @@
-module github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/products-api
+module github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api
 
 go 1.13
 

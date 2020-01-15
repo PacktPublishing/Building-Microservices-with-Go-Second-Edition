@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/products-api/5_pattern/handlers"
+	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api/6_REST/handlers"
 	"github.com/nicholasjackson/env"
 )
 
@@ -21,13 +21,11 @@ func main() {
 	l := log.New(os.Stdout, "products-api ", log.LstdFlags)
 
 	// create the handlers
-	hh := handlers.NewHello(l)
-	gh := handlers.NewGoodbye(l)
+	ph := handlers.NewProducts(l)
 
 	// create a new serve mux and register the handlers
 	sm := http.NewServeMux()
-	sm.Handle("/", hh)
-	sm.Handle("/goodbye", gh)
+	sm.Handle("/products", ph)
 
 	// create a new server
 	s := http.Server{
