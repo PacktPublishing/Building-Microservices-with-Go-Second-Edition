@@ -2,45 +2,44 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"time"
 
-	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api/6_REST/handlers"
+	hclog "github.com/hashicorp/go-hclog"
 	"github.com/nicholasjackson/env"
 )
 
 var bindAddress = env.String("BIND_ADDRESS", false, ":9090", "Bind address for the server")
+var logLevel = env.String("LOG_LEVEL", false, "debug", "Log output level for the server [debug, info, trace]")
 
 func main() {
 
 	env.Parse()
 
-	l := log.New(os.Stdout, "products-api ", log.LstdFlags)
+	l := hclog.New(
+		&hclog.LoggerOptions{
+			Name:  "product-images",
+			Level: hclog.LevelFromString(*logLevel),
+		},
+	)
+
+	// create a logger for the server from the default logger
+	sl := l.StandardLogger(&hclog.StandardLoggerOptions{InferLevels: true})
 
 	// create the handlers
-	ph := handlers.NewProducts(l)
+	//ph := handlers.NewProducts(l)
 
 	// create a new serve mux and register the handlers
 	sm := http.NewServeMux()
-
-	// will handle URLS for:
-	// /products/
-	// /products/1
-	//
-	// URLS for /products will be responded with a HTTP status 301 and a redirect
-	// to /products/
-	//
-	//  https://golang.org/pkg/net/http/#ServeMux
-	sm.Handle("/products/", ph)
+	//sm.Handle("/", ph)
 
 	// create a new server
 	s := http.Server{
 		Addr:         *bindAddress,      // configure the bind address
 		Handler:      sm,                // set the default handler
-		ErrorLog:     l,                 // set the logger for the server
+		ErrorLog:     sl,                // the logger for the server
 		ReadTimeout:  5 * time.Second,   // max time to read request from the client
 		WriteTimeout: 10 * time.Second,  // max time to write response to the client
 		IdleTimeout:  120 * time.Second, // max time for connections using TCP Keep-Alive
@@ -48,11 +47,11 @@ func main() {
 
 	// start the server
 	go func() {
-		l.Println("[INFO] Starting server on port 9090")
+		l.Info("Starting server", "bind_address", *bindAddress)
 
 		err := s.ListenAndServe()
 		if err != nil {
-			l.Printf("[ERROR] Error starting server: %s\n", err)
+			l.Error("Unable to start server", "error", err)
 			os.Exit(1)
 		}
 	}()
@@ -64,7 +63,7 @@ func main() {
 
 	// Block until a signal is received.
 	sig := <-c
-	log.Println("[INFO] Got signal:", sig)
+	l.Info("Shutting down server with", "signal", sig)
 
 	// gracefully shutdown the server, waiting max 30 seconds for current operations to complete
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)

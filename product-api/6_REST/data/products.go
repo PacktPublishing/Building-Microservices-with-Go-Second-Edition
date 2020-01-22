@@ -2,8 +2,12 @@ package data
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 )
+
+// ErrProductNotFound is an error raised when a product can not be found in the database
+var ErrProductNotFound = fmt.Errorf("Product not found")
 
 // Product defines the structure for an API product
 type Product struct {
@@ -14,30 +18,80 @@ type Product struct {
 	SKU         string  `json:"sku"`
 }
 
-type Products []Product
+// FromJSON deserializes the object from JSON string
+// in an io.Reader
+func (p *Product) FromJSON(r io.Reader) error {
+	d := json.NewDecoder(r)
+	return d.Decode(p)
+}
 
+// Products defines a slice of Product
+type Products []*Product
+
+// ToJSON serializes the Products into a string based JSON format
 func (p *Products) ToJSON(w io.Writer) error {
 	e := json.NewEncoder(w)
 	return e.Encode(p)
 }
 
+// GetProducts returns all products from the database
 func GetProducts() Products {
 	return productList
 }
 
-var productList = []Product{
-	Product{
+// GetProductByID returns a single product which matches the id from the
+// database.
+// If a product is not found this function returns a ProductNotFound error
+func GetProductByID(id int) (*Product, error) {
+	i := findIndexByProductID(id)
+	if id == -1 {
+		return nil, ErrProductNotFound
+	}
+
+	return productList[i], nil
+}
+
+// UpdateProduct replaces a product in the database with the given
+// item.
+// If a product with the given id does not exist in the database
+// this function returns a ProductNotFound error
+func UpdateProduct(p Product) error {
+	i := findIndexByProductID(p.ID)
+	if i == -1 {
+		return ErrProductNotFound
+	}
+
+	// update the product in the DB
+	productList[i] = &p
+
+	return nil
+}
+
+// findIndex finds the index of a product in the database
+// returns -1 when no product can be found
+func findIndexByProductID(id int) int {
+	for i, p := range productList {
+		if p.ID == id {
+			return i
+		}
+	}
+
+	return -1
+}
+
+var productList = []*Product{
+	&Product{
 		ID:          1,
-		Name:        "A",
-		Description: "B",
-		Price:       12.34,
+		Name:        "Latte",
+		Description: "Frothy milky coffee",
+		Price:       2.45,
 		SKU:         "abc323",
 	},
-	Product{
+	&Product{
 		ID:          2,
-		Name:        "b",
-		Description: "b",
-		Price:       2.29,
+		Name:        "Esspresso",
+		Description: "Short and strong coffee without milk",
+		Price:       1.99,
 		SKU:         "fjd34",
 	},
 }
