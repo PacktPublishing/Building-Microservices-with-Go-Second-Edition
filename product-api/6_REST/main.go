@@ -47,17 +47,18 @@ func main() {
 	}
 
 	// start the server
-	go func() {
-		l.Println("[INFO] Starting server on port 9090")
+	//go func() {
+	l.Println("[INFO] Starting server on port 9090")
 
-		err := s.ListenAndServe()
-		if err != nil {
-			l.Printf("[ERROR] Error starting server: %s\n", err)
-			os.Exit(1)
-		}
-	}()
+	err := s.ListenAndServe()
+	if err != nil {
+		l.Printf("[ERROR] Error starting server: %s\n", err)
+		os.Exit(1)
+	}
+	//}()
 
 	// trap sigterm or interupt and gracefully shutdown the server
+	l.Println("[INFO] Press Ctrl-C to stop service")
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	signal.Notify(c, os.Kill)

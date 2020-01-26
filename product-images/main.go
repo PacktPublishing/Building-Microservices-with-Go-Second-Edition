@@ -7,12 +7,15 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-images/files"
+	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-images/handlers"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/nicholasjackson/env"
 )
 
 var bindAddress = env.String("BIND_ADDRESS", false, ":9090", "Bind address for the server")
 var logLevel = env.String("LOG_LEVEL", false, "debug", "Log output level for the server [debug, info, trace]")
+var basePath = env.String("BASE_PATH", false, "/tmp/images", "Base path to save images")
 
 func main() {
 
@@ -28,12 +31,19 @@ func main() {
 	// create a logger for the server from the default logger
 	sl := l.StandardLogger(&hclog.StandardLoggerOptions{InferLevels: true})
 
+	// create the storage class, use local storage
+	stor, err := files.NewLocal(*basePath)
+	if err != nil {
+		l.Error("Unable to create storage", "error", err)
+		os.Exit(1)
+	}
+
 	// create the handlers
-	//ph := handlers.NewProducts(l)
+	fh := handlers.NewFiles(stor, l)
 
 	// create a new serve mux and register the handlers
 	sm := http.NewServeMux()
-	//sm.Handle("/", ph)
+	sm.Handle("/", fh)
 
 	// create a new server
 	s := http.Server{
