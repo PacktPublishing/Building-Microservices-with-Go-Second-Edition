@@ -1,8 +1,11 @@
 github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition v0.0.0-20200112154811-11ac31f987fe h1:h/CK8LSgamqNr56hlrfODPU3Ec0lxAt39tsrAyimG0U=
 github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition v0.0.0-20200114090946-8b8fca2b7f26 h1:VSSckbUJ+7lKE9kiJkSpsLjjkrof4U3zykiNQX2kRuM=
+github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition v0.0.0-20200126142751-a3afd3b653eb h1:vHNEReymEvxxOT13YtInXUbFQJSxyaz8EkqkRIVUjIY=
 github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api v0.0.0-20200114090946-8b8fca2b7f26 h1:N1hxTjviEEz55uEBvSZtqZXMBPjUMsou/ue9XHJPPNg=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/gorilla/mux v1.7.3 h1:gnP5JzjVOuiZD07fKKToCAOjS0yOpj/qPETTXCCS6hw=
+github.com/gorilla/mux v1.7.3/go.mod h1:1lud6UwP+6orDFRuTfBEV8e9/aOM/c4fVVCaMa2zaAs=
 github.com/nicholasjackson/env v0.5.0 h1:AmVgGcvc/OjOw5JLQBQyyIYaBFy4eqtG0PyF+PAf9e4=
 github.com/nicholasjackson/env v0.5.0/go.mod h1:8PvK2K2IBkG9ANQ9TJq7D0EGIblM5hS5SglTXLkX/04=
 github.com/nicholasjackson/env v0.6.0 h1:6xdio52m7cKRtgZPER6NFeBZxicR88rx5a+5Jl4/qus=

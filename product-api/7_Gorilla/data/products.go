@@ -72,7 +72,7 @@ func AddProduct(p Product) {
 	// get the next id in sequence
 	maxID := productList[len(productList)-1].ID
 	p.ID = maxID + 1
-	productList = append(productList, p)
+	productList = append(productList, &p)
 }
 
 // findIndex finds the index of a product in the database

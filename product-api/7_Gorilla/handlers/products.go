@@ -1,14 +1,17 @@
 package handlers
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
-	"regexp"
 	"strconv"
 
-	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api/6_REST/data"
+	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api/7_Gorilla/data"
+	"github.com/gorilla/mux"
 )
+
+type KeyProduct struct{}
 
 // Products handler for getting and updating products
 type Products struct {
@@ -22,49 +25,17 @@ func NewProducts(l *log.Logger) *Products {
 
 var ErrInvalidProductPath = fmt.Errorf("Invalid Path, path should be /products/[id]")
 
-// ServeHTTP implements the http.Handler interface
-func (p *Products) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodGet {
-		p.get(rw, r)
-		return
-	}
-
-	if r.Method == http.MethodPut {
-		p.put(rw, r)
-		return
-	}
-
-	if r.Method == http.MethodPost {
-		p.post(rw, r)
-		return
-	}
-
-	// if we have not matched any of the HTTP methods handled return an error
-	rw.WriteHeader(http.StatusMethodNotAllowed)
-}
-
 // getProductID returns the product ID from the URL
 func getProductID(r *http.Request) (int, error) {
 	// parse the product id from the url
-	re := regexp.MustCompile(`\/products\/([0-9]+)`)
-	m := re.FindAllStringSubmatch(r.URL.Path, -1)
-
-	// if there is more than one match the URL is invalid
-	if len(m) != 1 {
-		return -1, ErrInvalidProductPath
-	}
-
-	// there should be two match groups the second contains the id
-	if len(m[0]) != 2 {
-		return -1, ErrInvalidProductPath
-	}
+	vars := mux.Vars(r)
 
 	// convert the id into an integer and return
-	return strconv.Atoi(m[0][1])
+	return strconv.Atoi(vars["id"])
 }
 
 // get handles HTTP GET requests for the products
-func (p *Products) get(rw http.ResponseWriter, r *http.Request) {
+func (p *Products) GET(rw http.ResponseWriter, r *http.Request) {
 	prods := data.GetProducts()
 
 	err := prods.ToJSON(rw)
@@ -74,9 +45,8 @@ func (p *Products) get(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (p *Products) put(rw http.ResponseWriter, r *http.Request) {
-	prod := data.Product{}
-
+// PUT handles PUT requests to update products
+func (p *Products) PUT(rw http.ResponseWriter, r *http.Request) {
 	// fetch the id from the query string
 	id, err := getProductID(r)
 	if err != nil {
@@ -85,13 +55,7 @@ func (p *Products) put(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// deserialize the body
-	err = prod.FromJSON(r.Body)
-	if err != nil {
-		p.l.Println("[ERROR] deserializing product", err)
-		http.Error(rw, "Error reading product", http.StatusBadRequest)
-		return
-	}
+	prod := r.Context().Value(KeyProduct{}).(data.Product)
 
 	// override the product id
 	prod.ID = id
@@ -109,20 +73,33 @@ func (p *Products) put(rw http.ResponseWriter, r *http.Request) {
 	rw.WriteHeader(http.StatusNoContent)
 }
 
-func (p *Products) post(rw http.ResponseWriter, r *http.Request) {
-	prod := data.Product{}
-
-	err := prod.FromJSON(r.Body)
-	if err != nil {
-		p.l.Println("[ERROR] deserializing product", err)
-		http.Error(rw, "Error reading product", http.StatusBadRequest)
-		return
-	}
-
+// POST handles post requests to add new products
+func (p *Products) POST(rw http.ResponseWriter, r *http.Request) {
+	prod := r.Context().Value(KeyProduct{}).(data.Product)
 	data.AddProduct(prod)
 
 	p.l.Printf("[DEBUG] Inserted product: %#v\n", prod)
+}
 
-	// return the product with the inserted id
+// MiddlewareValidateProduct validates the product in the request and calls next if ok
+func (p *Products) MiddlewareValidateProduct(next http.Handler) http.Handler {
+
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		prod := data.Product{}
+
+		err := prod.FromJSON(r.Body)
+		if err != nil {
+			p.l.Println("[ERROR] deserializing product", err)
+			http.Error(rw, "Error reading product", http.StatusBadRequest)
+			return
+		}
+
+		// add the product to the context
+		ctx := context.WithValue(r.Context(), KeyProduct{}, prod)
+		r = r.WithContext(ctx)
+
+		// Call the next handler, which can be another middleware in the chain, or the final handler.
+		next.ServeHTTP(rw, r)
+	})
 
 }
