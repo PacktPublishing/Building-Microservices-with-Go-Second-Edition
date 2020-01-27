@@ -83,7 +83,6 @@ func (p *Products) POST(rw http.ResponseWriter, r *http.Request) {
 
 // MiddlewareValidateProduct validates the product in the request and calls next if ok
 func (p *Products) MiddlewareValidateProduct(next http.Handler) http.Handler {
-
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		prod := data.Product{}
 
@@ -101,5 +100,4 @@ func (p *Products) MiddlewareValidateProduct(next http.Handler) http.Handler {
 		// Call the next handler, which can be another middleware in the chain, or the final handler.
 		next.ServeHTTP(rw, r)
 	})
-
 }
