@@ -20,6 +20,7 @@ func NewProducts(l *log.Logger) *Products {
 	return &Products{l}
 }
 
+// ErrInvalidProductPath error message 
 var ErrInvalidProductPath = fmt.Errorf("Invalid Path, path should be /products/[id]")
 
 // ServeHTTP implements the http.Handler interface
