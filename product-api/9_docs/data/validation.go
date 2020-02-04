@@ -1,10 +1,26 @@
 package data
 
 import (
+	"fmt"
 	"regexp"
 
 	"github.com/go-playground/validator"
 )
+
+// ValidationError wraps the validators FieldError so we do not
+// expose this to out code
+type ValidationError struct {
+	validator.FieldError
+}
+
+func (v *ValidationError) Error() string {
+	return fmt.Sprintf(
+		"Key: '%s' Error:Field validation for '%s' failed on the '%s' tag",
+		v.Namespace(),
+		v.Field(),
+		v.Tag(),
+	)
+}
 
 // Validation contains
 type Validation struct {
@@ -23,21 +39,34 @@ func NewValidation() *Validation {
 // for more detail the returned error can be cast into a
 // validator.ValidationErrors collection
 //
-// for _, errs := range err.(validator.ValidationErrors) {
-//			fmt.Println(err.Namespace())
-//			fmt.Println(err.Field())
-//			fmt.Println(err.StructNamespace())
-//			fmt.Println(err.StructField())
-//			fmt.Println(err.Tag())
-//			fmt.Println(err.ActualTag())
-//			fmt.Println(err.Kind())
-//			fmt.Println(err.Type())
-//			fmt.Println(err.Value())
-//			fmt.Println(err.Param())
+// if ve, ok := err.(validator.ValidationErrors); ok {
+//			fmt.Println(ve.Namespace())
+//			fmt.Println(ve.Field())
+//			fmt.Println(ve.StructNamespace())
+//			fmt.Println(ve.StructField())
+//			fmt.Println(ve.Tag())
+//			fmt.Println(ve.ActualTag())
+//			fmt.Println(ve.Kind())
+//			fmt.Println(ve.Type())
+//			fmt.Println(ve.Value())
+//			fmt.Println(ve.Param())
 //			fmt.Println()
 //	}
-func (v *Validation) Validate(i interface{}) error {
-	return v.validate.Struct(i)
+func (v *Validation) Validate(i interface{}) []ValidationError {
+	errs := v.validate.Struct(i).(validator.ValidationErrors)
+
+	if len(errs) == 0 {
+		return nil
+	}
+
+	var returnErrs []ValidationError
+	for _, err := range errs {
+		// cast the FieldError into our ValidationError and append to the slice
+		ve := ValidationError{err.(validator.FieldError)}
+		returnErrs = append(returnErrs, ve)
+	}
+
+	return returnErrs
 }
 
 // validateSKU

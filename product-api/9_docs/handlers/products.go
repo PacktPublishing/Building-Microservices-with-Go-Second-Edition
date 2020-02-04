@@ -21,8 +21,8 @@ type Products struct {
 }
 
 // NewProducts returns a new products handler with the given logger
-func NewProducts(l *log.Logger) *Products {
-	return &Products{l}
+func NewProducts(l *log.Logger, v *data.Validation) *Products {
+	return &Products{l, v}
 }
 
 // ErrInvalidProductPath is an error message when the product path is not valid
@@ -31,6 +31,11 @@ var ErrInvalidProductPath = fmt.Errorf("Invalid Path, path should be /products/[
 // GenericError is a generic error message returned by a server
 type GenericError struct {
 	Message error `json:"message"`
+}
+
+// ValidationError is a collection of validation error messages
+type ValidationError struct {
+	Messages []error `json:"messages"`
 }
 
 // getProductID returns the product ID from the URL
@@ -92,20 +97,25 @@ func (p *Products) POST(rw http.ResponseWriter, r *http.Request) {
 // MiddlewareValidateProduct validates the product in the request and calls next if ok
 func (p *Products) MiddlewareValidateProduct(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		prod := data.Product{}
+		prod := &data.Product{}
 
 		err := data.FromJSON(prod, r.Body)
 		if err != nil {
 			p.l.Println("[ERROR] deserializing product", err)
-			http.Error(rw, "Error reading product", http.StatusBadRequest)
+
+			rw.WriteHeader(http.StatusBadRequest)
+			data.ToJSON(&GenericError{Message: err}, rw)
 			return
 		}
 
 		// validate the product
-		err = p.v.Validate(prod)
-		if err != nil {
-			p.l.Println("[ERROR] validating product", err)
-			http.Error(rw, "Error validating product", http.StatusPreconditionFailed)
+		errs := p.v.Validate(prod)
+		if len(errs) != 0 {
+			p.l.Println("[ERROR] validating product", errs)
+
+			// return the validation messages as an array
+			rw.WriteHeader(http.StatusPreconditionFailed)
+			data.ToJSON(&ValidationError{Messages: errs}, rw)
 			return
 		}
 

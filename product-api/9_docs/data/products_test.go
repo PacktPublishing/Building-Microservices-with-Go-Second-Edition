@@ -14,7 +14,7 @@ func TestProductMissingNameReturnsErr(t *testing.T) {
 
 	v := NewValidation()
 	err := v.Validate(p)
-	assert.Error(t, err)
+	assert.Len(t, err, 1)
 }
 
 func TestProductMissingPriceReturnsErr(t *testing.T) {
@@ -25,7 +25,7 @@ func TestProductMissingPriceReturnsErr(t *testing.T) {
 
 	v := NewValidation()
 	err := v.Validate(p)
-	assert.Error(t, err)
+	assert.Len(t, err, 1)
 }
 
 func TestProductInvalidSKUReturnsErr(t *testing.T) {
@@ -37,7 +37,7 @@ func TestProductInvalidSKUReturnsErr(t *testing.T) {
 
 	v := NewValidation()
 	err := v.Validate(p)
-	assert.Error(t, err)
+	assert.Len(t, err, 1)
 }
 
 func TestValidProductDoesNOTReturnsErr(t *testing.T) {
@@ -49,7 +49,7 @@ func TestValidProductDoesNOTReturnsErr(t *testing.T) {
 
 	v := NewValidation()
 	err := v.Validate(p)
-	assert.NoError(t, err)
+	assert.Len(t, err, 1)
 }
 
 func TestProductsToJSON(t *testing.T) {

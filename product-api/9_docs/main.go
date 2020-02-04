@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api/9_docs/data"
 	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api/9_docs/handlers"
 	"github.com/gorilla/mux"
 	"github.com/nicholasjackson/env"
@@ -23,9 +24,10 @@ func main() {
 	env.Parse()
 
 	l := log.New(os.Stdout, "products-api ", log.LstdFlags)
+	v := data.NewValidation()
 
 	// create the handlers
-	ph := handlers.NewProducts(l)
+	ph := handlers.NewProducts(l, v)
 
 	// create a new Gorilla mux router and register the handlers
 	sm := mux.NewRouter()
