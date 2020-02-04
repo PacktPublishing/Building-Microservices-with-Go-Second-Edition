@@ -1,10 +1,11 @@
 package main
 
 import (
-	"os"
 	"log"
 	"net/http"
-	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/products-api/final/handlers"
+	"os"
+
+	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api/4_handlers/handlers"
 )
 
 func main() {
@@ -20,7 +21,7 @@ func main() {
 	sm.Handle("/goodbye", gh)
 
 	// Listen for connections on all ip addresses (0.0.0.0)
-	// port 9090 
+	// port 9090
 	log.Println("Starting Server")
 	err := http.ListenAndServe(":9090", sm)
 	log.Fatal(err)

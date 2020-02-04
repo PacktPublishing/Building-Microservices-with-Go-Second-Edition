@@ -1,9 +1,7 @@
 package data
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 )
 
 // ErrProductNotFound is an error raised when a product can not be found in the database
@@ -11,28 +9,15 @@ var ErrProductNotFound = fmt.Errorf("Product not found")
 
 // Product defines the structure for an API product
 type Product struct {
-	ID          int     `json:"id"`
-	Name        string  `json:"name"`
+	ID          int     `json:"id"` // Unique identifier for the product
+	Name        string  `json:"name" validate:"required"`
 	Description string  `json:"description"`
-	Price       float32 `json:"price"`
-	SKU         string  `json:"sku"`
-}
-
-// FromJSON deserializes the object from JSON string
-// in an io.Reader
-func (p *Product) FromJSON(r io.Reader) error {
-	d := json.NewDecoder(r)
-	return d.Decode(p)
+	Price       float32 `json:"price" validate:"required,gt=0"`
+	SKU         string  `json:"sku" validate:"sku"`
 }
 
 // Products defines a slice of Product
 type Products []*Product
-
-// ToJSON serializes the Products into a string based JSON format
-func (p *Products) ToJSON(w io.Writer) error {
-	e := json.NewEncoder(w)
-	return e.Encode(p)
-}
 
 // GetProducts returns all products from the database
 func GetProducts() Products {

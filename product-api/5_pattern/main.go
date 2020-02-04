@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/products-api/5_pattern/handlers"
+	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api/5_pattern/handlers"
 	"github.com/nicholasjackson/env"
 )
 
