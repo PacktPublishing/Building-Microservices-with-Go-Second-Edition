@@ -33,16 +33,20 @@ func main() {
 	sm := mux.NewRouter()
 
 	// handlers for API
-	getR := sm.Methods("GET").Subrouter()
-	getR.HandleFunc("/products", ph.GET)
+	getR := sm.Methods(http.MethodGet).Subrouter()
+	getR.HandleFunc("/products", ph.ListAll)
+	getR.HandleFunc("/products/{id:[0-9]+}", ph.ListSingle)
 
-	putR := sm.Methods("PUT").Subrouter()
-	putR.HandleFunc("/products/{id:[0-9]+}", ph.PUT)
+	putR := sm.Methods(http.MethodPut).Subrouter()
+	putR.HandleFunc("/products", ph.Update)
 	putR.Use(ph.MiddlewareValidateProduct)
 
-	postR := sm.Methods("POST").Subrouter()
-	postR.HandleFunc("/products", ph.POST)
+	postR := sm.Methods(http.MethodPost).Subrouter()
+	postR.HandleFunc("/products", ph.Create)
 	postR.Use(ph.MiddlewareValidateProduct)
+
+	deleteR := sm.Methods(http.MethodDelete).Subrouter()
+	deleteR.HandleFunc("/products/{id:[0-9]+}", ph.Delete)
 
 	// handler for documentation
 	opts := middleware.RedocOpts{SpecURL: "/swagger.yaml"}
