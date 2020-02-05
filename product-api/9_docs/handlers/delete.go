@@ -8,17 +8,11 @@ import (
 
 // Delete handles DELETE requests and removes items from the database
 func (p *Products) Delete(rw http.ResponseWriter, r *http.Request) {
-	id, err := getProductID(r)
-	if err != nil {
-		p.l.Println("[ERROR] deleting record unable to get record id")
-
-		rw.WriteHeader(http.StatusBadRequest)
-		data.ToJSON(&GenericError{Message: err.Error()}, rw)
-		return
-	}
+	id := getProductID(r)
 
 	p.l.Println("[DEBUG] deleting record id", id)
-	err = data.DeleteProduct(id)
+
+	err := data.DeleteProduct(id)
 	if err == data.ErrProductNotFound {
 		p.l.Println("[ERROR] deleting record id does not exist")
 

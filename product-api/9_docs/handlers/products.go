@@ -38,10 +38,19 @@ type ValidationError struct {
 }
 
 // getProductID returns the product ID from the URL
-func getProductID(r *http.Request) (int, error) {
+// Panics if cannot convert the id into an integer
+// this should never happen as the router ensures that
+// this is a valid number
+func getProductID(r *http.Request) int {
 	// parse the product id from the url
 	vars := mux.Vars(r)
 
 	// convert the id into an integer and return
-	return strconv.Atoi(vars["id"])
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		// should never happen
+		panic(err)
+	}
+
+	return id
 }

@@ -9,22 +9,20 @@ import (
 // Update handles PUT requests to update products
 func (p *Products) Update(rw http.ResponseWriter, r *http.Request) {
 	// fetch the id from the query string
-	id, err := getProductID(r)
-	if err != nil {
-		p.l.Println("[ERROR] unable to find product id in URL", r.URL.Path, err)
-		http.Error(rw, "Missing product id, url should be formatted /products/[id] for PUT requests", http.StatusBadRequest)
-		return
-	}
+	id := getProductID(r)
 
+	p.l.Println("[DEBUG] updating record id", id)
 	prod := r.Context().Value(KeyProduct{}).(data.Product)
 
 	// override the product id
 	prod.ID = id
 
-	err = data.UpdateProduct(prod)
+	err := data.UpdateProduct(prod)
 	if err == data.ErrProductNotFound {
 		p.l.Println("[ERROR] product not found", err)
-		http.Error(rw, "Product not found in database", http.StatusNotFound)
+
+		rw.WriteHeader(http.StatusNotFound)
+		data.ToJSON(&GenericError{Message: "Product not found in database"}, rw)
 		return
 	}
 
