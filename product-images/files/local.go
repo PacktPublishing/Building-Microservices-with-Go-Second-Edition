@@ -1,10 +1,11 @@
 package files
 
 import (
-	"golang.org/x/xerrors"
 	"io"
 	"os"
 	"path/filepath"
+
+	"golang.org/x/xerrors"
 )
 
 // Local is an implementation of the Storage interface which works with the
@@ -23,7 +24,7 @@ func NewLocal(basePath string, maxSize int) (*Local, error) {
 		return nil, err
 	}
 
-	return &Local{p}, nil
+	return &Local{basePath: p}, nil
 }
 
 // Save the contents of the Writer to the given path
@@ -34,7 +35,7 @@ func (l *Local) Save(path string, contents io.Reader) error {
 
 	// get the directory and make sure it exists
 	d := filepath.Dir(fp)
-	err := os.MkdirAll(d, os.ModePerm)
+	err := os.MkdirAll(d, os.ModeDir)
 	if err != nil {
 		return xerrors.Errorf("Unable to create directory: %w", err)
 	}

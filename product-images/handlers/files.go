@@ -1,15 +1,11 @@
 package handlers
 
 import (
-	"compress/gzip"
-	"fmt"
-	"io"
 	"net/http"
 	"path/filepath"
-	"regexp"
-	"strings"
 
 	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-images/files"
+	"github.com/gorilla/mux"
 	"github.com/hashicorp/go-hclog"
 )
 
@@ -26,36 +22,14 @@ func NewFiles(s files.Storage, l hclog.Logger) *Files {
 
 // ServeHTTP implements the http.Handler interface
 func (f *Files) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	// get the path of the file, should be in the format /[id]/[filepath]
-	rx := regexp.MustCompile(`\/([0-9]+)\/(.*)`)
-	sm := rx.FindAllStringSubmatch(r.URL.String(), -1)
+	vars := mux.Vars(r)
+	id := vars["id"]
+	fn := vars["filename"]
 
-	// should only have one match
-	if len(sm) != 1 {
-		f.invalidURI(r.URL.String(), rw)
-		return
-	}
-
-	// should have three groups
-	if len(sm[0]) != 3 {
-		f.invalidURI(r.URL.String(), rw)
-		return
-	}
+	f.log.Info("Handle PUT", "id", id, "filename", fn)
 
 	// check that the filepath is a valid name and file
-	if filepath.Ext(sm[0][2]) == "" {
-		f.log.Error("Invalid filename", "filename", sm[0][2])
-		http.Error(rw, fmt.Sprintf("Invalid filename should be in the format [name].[ext], got %s", sm[0][2]), http.StatusBadRequest)
-		return
-	}
-
-	if r.Method == http.MethodPut {
-		f.saveFile(sm[0][1], sm[0][2], rw, r)
-	}
-
-	if r.Method == http.MethodGet {
-		f.getFile(sm[0][1], sm[0][2], rw, r)
-	}
+	f.saveFile("1", "file.png", rw, r)
 }
 
 func (f *Files) invalidURI(uri string, rw http.ResponseWriter) {
@@ -79,55 +53,57 @@ func (f *Files) saveFile(id, path string, rw http.ResponseWriter, r *http.Reques
 func (f *Files) getFile(id, path string, rw http.ResponseWriter, r *http.Request) {
 	f.log.Info("Get file for product", "id", id, "path", path)
 
-	fp := filepath.Join(id, path)
-	fr, err := f.store.Get(fp)
-	if err != nil {
-		f.log.Error("Unable to get file", "file", fp, "error", err)
-		http.Error(rw, "Unable to find file", http.StatusNotFound)
-		return
-	}
-	defer fr.Close()
+	/*
+		fp := filepath.Join(id, path)
+		fr, err := f.store.Get(fp)
+		if err != nil {
+			f.log.Error("Unable to get file", "file", fp, "error", err)
+			http.Error(rw, "Unable to find file", http.StatusNotFound)
+			return
+		}
+		defer fr.Close()
 
-	// set the filetpe header
-	// DetectContentType() function only uses the first 512 bytes
-	d := make([]byte, 512)
-	_, err = fr.Read(d)
-	if err != nil {
-		f.log.Error("Unable to read file headers", "file", fp, "error", err)
-		http.Error(rw, "Unable to find file", http.StatusInternalServerError)
-		return
-	}
+		// set the filetpe header
+		// DetectContentType() function only uses the first 512 bytes
+		d := make([]byte, 512)
+		_, err = fr.Read(d)
+		if err != nil {
+			f.log.Error("Unable to read file headers", "file", fp, "error", err)
+			http.Error(rw, "Unable to find file", http.StatusInternalServerError)
+			return
+		}
 
-	// roll back the stream
-	fr.Seek(0, 0)
+		// roll back the stream
+		fr.Seek(0, 0)
 
-	// detect the content type
-	ct := http.DetectContentType(d)
-	if ct != "" {
-		// detected content type
-		f.log.Debug("Detected content type", "type", ct, "file", fp)
-		rw.Header().Add("Content-Type", ct)
-	} else {
-		// fall back to default
-		f.log.Debug("Unable to detect content type", "file", fp)
-		rw.Header().Add("Content-Type", "application/octet-stream")
-	}
+		// detect the content type
+		ct := http.DetectContentType(d)
+		if ct != "" {
+			// detected content type
+			f.log.Debug("Detected content type", "type", ct, "file", fp)
+			rw.Header().Add("Content-Type", ct)
+		} else {
+			// fall back to default
+			f.log.Debug("Unable to detect content type", "file", fp)
+			rw.Header().Add("Content-Type", "application/octet-stream")
+		}
 
-	// if client cant handle gzip send plain
-	if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
-		f.log.Debug("Unable to handle gzipped", "file", fp)
-		io.Copy(rw, fr)
-		return
-	}
+		// if client cant handle gzip send plain
+		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+			f.log.Debug("Unable to handle gzipped", "file", fp)
+			io.Copy(rw, fr)
+			return
+		}
 
-	// client can handle gziped content send gzipped to speed up transfer
-	// set the content encoding header for gzip
-	rw.Header().Add("Content-Encoding", "gzip")
+		// client can handle gziped content send gzipped to speed up transfer
+		// set the content encoding header for gzip
+		rw.Header().Add("Content-Encoding", "gzip")
 
-	// wrap the default writer in a gzip writer
-	gw := gzip.NewWriter(rw)
-	defer gw.Close()
+		// wrap the default writer in a gzip writer
+		gw := gzip.NewWriter(rw)
+		defer gw.Close()
 
-	// write the file
-	io.Copy(gw, fr)
+		// write the file
+		io.Copy(gw, fr)
+	*/
 }
