@@ -26,10 +26,10 @@ func (f *Files) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	fn := vars["filename"]
 
-	f.log.Info("Handle PUT", "id", id, "filename", fn)
+	f.log.Info("Handle POST", "id", id, "filename", fn)
 
 	// check that the filepath is a valid name and file
-	f.saveFile("1", "file.png", rw, r)
+	f.saveFile(id, fn, rw, r)
 }
 
 func (f *Files) invalidURI(uri string, rw http.ResponseWriter) {

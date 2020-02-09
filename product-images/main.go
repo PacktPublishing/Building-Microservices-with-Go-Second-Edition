@@ -46,7 +46,11 @@ func main() {
 	// create a new serve mux and register the handlers
 	sm := mux.NewRouter()
 
-	postRouter := sm.Methods("POST").Subrouter()
+	getRouter := sm.Methods(http.MethodGet).Subrouter()
+	getRouter.Handle("/{id:[0-9]+}/{filename:[a-zA-Z]+\\.[a-z]{3}}", http.FileServer(http.Dir(*basePath)))
+	getRouter.Use(handlers.GZipResponseMiddleware)
+
+	postRouter := sm.Methods(http.MethodPost).Subrouter()
 	postRouter.Handle("/{id:[0-9]+}/{filename:[a-zA-Z]+\\.[a-z]{3}}", fh)
 
 	// create a new server

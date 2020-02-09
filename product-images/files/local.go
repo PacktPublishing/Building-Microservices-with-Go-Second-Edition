@@ -47,7 +47,8 @@ func (l *Local) Save(path string, contents io.Reader) error {
 		if err != nil {
 			return xerrors.Errorf("Unable to delete file: %w", err)
 		}
-	} else if err != os.ErrNotExist {
+	} else if !os.IsNotExist(err) {
+		// if this is anything other than a not exists error
 		return xerrors.Errorf("Unable to get file info: %w", err)
 	}
 
