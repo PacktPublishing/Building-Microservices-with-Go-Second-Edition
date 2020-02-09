@@ -13,9 +13,29 @@
 //	- application/json
 //
 // swagger:meta
-package docs
+package handlers
 
 import "github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api/8_validation/data"
+
+//
+// NOTE: Types defined here are purely for documentation purposes
+// these types are not used by any of the handers
+
+// Generic error message returned as a string
+// swagger:response errorResponse
+type errorResponseWrapper struct {
+	// Description of the error
+	// in: body
+	Body GenericError
+}
+
+// Validation errors defined as an array of strings
+// swagger:response errorValidation
+type errorValidationWrapper struct {
+	// Collection of the errors
+	// in: body
+	Body ValidationError
+}
 
 // A list of products
 // swagger:response productsResponse
@@ -31,14 +51,6 @@ type productResponseWrapper struct {
 	// Newly created product
 	// in: body
 	Body data.Product
-}
-
-// An error message returned when the request can not be completed
-// swagger:response errorResponse
-type errorResponseWrapper struct {
-	// Description of the error
-	// in: body
-	Body string
 }
 
 // No content is returned by this API endpoint
@@ -62,22 +74,3 @@ type productIDParamsWrapper struct {
 	// required: true
 	ID int `json:"id"`
 }
-
-// swagger:route GET /products products listProducts
-// Return a list of products from the database
-// responses:
-//	200: productsResponse
-
-// swagger:route PUT /products/{id} products updateProduct
-// Update a products details
-//
-// responses:
-//	201: noContentResponse
-//  404: errorResponse
-
-// swagger:route POST /products products createProduct
-// Create a new product
-//
-// responses:
-//	200: productResponse
-//  501: errorResponse

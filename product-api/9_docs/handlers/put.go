@@ -6,16 +6,20 @@ import (
 	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api/9_docs/data"
 )
 
+// swagger:route PUT /products products updateProduct
+// Update a products details
+//
+// responses:
+//	201: noContentResponse
+//  404: errorResponse
+//  422: errorValidation
+
 // Update handles PUT requests to update products
 func (p *Products) Update(rw http.ResponseWriter, r *http.Request) {
-	// fetch the id from the query string
-	id := getProductID(r)
 
-	p.l.Println("[DEBUG] updating record id", id)
+	// fetch the product from the context
 	prod := r.Context().Value(KeyProduct{}).(data.Product)
-
-	// override the product id
-	prod.ID = id
+	p.l.Println("[DEBUG] updating record id", prod.ID)
 
 	err := data.UpdateProduct(prod)
 	if err == data.ErrProductNotFound {
@@ -25,8 +29,6 @@ func (p *Products) Update(rw http.ResponseWriter, r *http.Request) {
 		data.ToJSON(&GenericError{Message: "Product not found in database"}, rw)
 		return
 	}
-
-	p.l.Printf("[DEBUG] Updated product: %#v\n", prod)
 
 	// write the no content success header
 	rw.WriteHeader(http.StatusNoContent)

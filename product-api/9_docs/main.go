@@ -13,7 +13,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/nicholasjackson/env"
 
-	_ "github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api/9_docs/docs"
 	"github.com/go-openapi/runtime/middleware"
 )
 

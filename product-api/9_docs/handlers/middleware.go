@@ -27,7 +27,7 @@ func (p *Products) MiddlewareValidateProduct(next http.Handler) http.Handler {
 			p.l.Println("[ERROR] validating product", errs)
 
 			// return the validation messages as an array
-			rw.WriteHeader(http.StatusPreconditionFailed)
+			rw.WriteHeader(http.StatusUnprocessableEntity)
 			data.ToJSON(&ValidationError{Messages: errs.Errors()}, rw)
 			return
 		}
