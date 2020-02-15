@@ -10,6 +10,7 @@ import (
 
 	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api/9_docs/data"
 	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api/9_docs/handlers"
+	ghandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/nicholasjackson/env"
 
@@ -17,6 +18,7 @@ import (
 )
 
 var bindAddress = env.String("BIND_ADDRESS", false, ":9090", "Bind address for the server")
+var allowedOrigins = env.String("ALLOW_ORIGIN", false, "http://localhost:3000", "Allowe origin for CORS requests")
 
 func main() {
 
@@ -59,10 +61,15 @@ func main() {
 	// handler to return the swagger documentation
 	getR.Handle("/swagger.yaml", http.FileServer(http.Dir("./")))
 
+	// allow the local we
+	ch := ghandlers.CORS(
+		ghandlers.AllowedOrigins([]string{*allowedOrigins}),
+	)(sm)
+
 	// create a new server
 	s := http.Server{
 		Addr:         *bindAddress,      // configure the bind address
-		Handler:      sm,                // set the default handler
+		Handler:      ch,                // set the default handler
 		ErrorLog:     l,                 // set the logger for the server
 		ReadTimeout:  5 * time.Second,   // max time to read request from the client
 		WriteTimeout: 10 * time.Second,  // max time to write response to the client
