@@ -47,6 +47,8 @@ func main() {
 	sm := mux.NewRouter()
 
 	getRouter := sm.Methods(http.MethodGet).Subrouter()
+
+	// problem with FileServer is that it is dumb
 	getRouter.Handle("/{id:[0-9]+}/{filename:[a-zA-Z]+\\.[a-z]{3}}", http.FileServer(http.Dir(*basePath)))
 	getRouter.Use(handlers.GZipResponseMiddleware)
 
