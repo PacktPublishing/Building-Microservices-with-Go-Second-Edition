@@ -63,31 +63,36 @@ func (mw *Middleware) GZipResponseMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+// WrappedResponseWriter wrapps the default http.ResponseWriter in a GZip stream
 type WrappedResponseWriter struct {
 	rw http.ResponseWriter
 	gw *gzip.Writer
 }
 
+// NewWrappedResponseWriter returns a new wrapped response writer
 func NewWrappedResponseWriter(rw http.ResponseWriter) *WrappedResponseWriter {
-
 	// wrap the default writer in a gzip writer
 	gw := gzip.NewWriter(rw)
 
 	return &WrappedResponseWriter{rw, gw}
 }
 
+// Header implements the http.ResponseWriter Header method
 func (wr *WrappedResponseWriter) Header() http.Header {
 	return wr.rw.Header()
 }
 
+// Write implements the http.ResponseWriter Write method
 func (wr *WrappedResponseWriter) Write(d []byte) (int, error) {
 	return wr.gw.Write(d)
 }
 
+// WriteHeader implements the http.ResponseWriter WriteHeader method
 func (wr *WrappedResponseWriter) WriteHeader(statusCode int) {
 	wr.rw.WriteHeader(statusCode)
 }
 
+// Flush implements the http.ResponseWriter Flush method
 func (wr *WrappedResponseWriter) Flush() {
 	// flush and close the writer
 	wr.gw.Flush()

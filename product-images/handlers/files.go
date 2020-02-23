@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -35,7 +36,17 @@ func (f *Files) SaveFileREST(rw http.ResponseWriter, r *http.Request) {
 	// over max size
 	r.Body = http.MaxBytesReader(rw, r.Body, f.maxSize)
 
-	f.saveFile(id, fn, rw, r.Body)
+	err := f.saveFile(id, fn, rw, r.Body)
+	if err != nil {
+		return
+	}
+
+	// write the json response
+	resp := map[string]string{}
+	resp["status"] = "200"
+	resp["message"] = "ok"
+
+	json.NewEncoder(rw).Encode(resp)
 }
 
 // SaveMultipart handles multipart files
@@ -100,7 +111,7 @@ func (f *Files) SaveMultipart(rw http.ResponseWriter, r *http.Request) {
 	*/
 }
 
-func (f *Files) saveFile(id, name string, rw http.ResponseWriter, r io.ReadCloser) {
+func (f *Files) saveFile(id, name string, rw http.ResponseWriter, r io.ReadCloser) error {
 	defer r.Close()
 	r = http.MaxBytesReader(rw, r, f.maxSize)
 
@@ -110,4 +121,6 @@ func (f *Files) saveFile(id, name string, rw http.ResponseWriter, r io.ReadClose
 		f.log.Error("Unable to save file", "error", err)
 		http.Error(rw, "Unable to save file", http.StatusInternalServerError)
 	}
+
+	return err
 }
