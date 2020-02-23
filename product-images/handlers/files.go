@@ -30,7 +30,7 @@ func (f *Files) SaveFileREST(rw http.ResponseWriter, r *http.Request) {
 	id := vars["id"]
 	fn := vars["filename"]
 
-	f.log.Info("handle standar post", "id", id, "filename", fn)
+	f.log.Info("Handle RESTful POST", "id", id, "filename", fn)
 
 	// create a MaxBytesReader to ensure we do not read more than our max
 	// over max size

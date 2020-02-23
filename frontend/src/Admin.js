@@ -8,6 +8,16 @@ import Toast from './Toast.js'
 
 import axios from 'axios';
 
+/*
+This is the react equivilent of the following HTML form
+<form action="http://localhost:8000" method="post" enctype="multipart/form-data">
+  <p><input type="text" name="id" value="">
+  <p><input type="file" name="file">
+  <p><button type="submit">Submit</button>
+</form>
+*/
+
+
 class Admin extends React.Component {
 
     constructor(props) {
