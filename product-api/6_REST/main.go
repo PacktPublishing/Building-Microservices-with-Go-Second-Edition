@@ -35,6 +35,7 @@ func main() {
 	//
 	//  https://golang.org/pkg/net/http/#ServeMux
 	sm.Handle("/products/", ph)
+	//sm.Handle("/products", ph)
 
 	// create a new server
 	s := http.Server{

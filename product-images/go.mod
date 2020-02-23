@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/go-playground/locales v0.13.0 // indirect
+	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.3
 	github.com/hashicorp/go-hclog v0.11.0
 	github.com/nicholasjackson/env v0.6.0

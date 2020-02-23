@@ -20,13 +20,19 @@ func NewProducts(l *log.Logger) *Products {
 	return &Products{l}
 }
 
-// ErrInvalidProductPath error message 
+// ErrInvalidProductPath error message
 var ErrInvalidProductPath = fmt.Errorf("Invalid Path, path should be /products/[id]")
 
 // ServeHTTP implements the http.Handler interface
 func (p *Products) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		p.get(rw, r)
+		id, _ := getProductID(r)
+		if id > 0 {
+			p.getSingle(id, rw, r)
+			return
+		}
+
+		p.getAll(rw, r)
 		return
 	}
 
@@ -37,6 +43,11 @@ func (p *Products) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodPost {
 		p.post(rw, r)
+		return
+	}
+
+	if r.Method == http.MethodDelete {
+		p.delete(rw, r)
 		return
 	}
 
@@ -64,38 +75,42 @@ func getProductID(r *http.Request) (int, error) {
 	return strconv.Atoi(m[0][1])
 }
 
-// get handles HTTP GET requests for the products
-func (p *Products) get(rw http.ResponseWriter, r *http.Request) {
-	prods := data.GetProducts()
+// getSingle handles HTTP GET requests for the products returning a single product
+func (p *Products) getSingle(id int, rw http.ResponseWriter, r *http.Request) {
+	prod, err := data.GetProductByID(id)
+	if err == data.ErrProductNotFound {
+		p.l.Println("[ERROR] product not found", err)
+		http.Error(rw, "Product not found in database", http.StatusNotFound)
+		return
+	}
 
-	err := prods.ToJSON(rw)
+	err = data.ToJSON(rw, prod)
 	if err != nil {
 		p.l.Println("[ERROR] serializing product", err)
-		http.Error(rw, "Error serialzing products", http.StatusInternalServerError)
+	}
+}
+
+// getAll handles HTTP GET requests for the products returning all products
+func (p *Products) getAll(rw http.ResponseWriter, r *http.Request) {
+
+	prods := data.GetProducts()
+
+	err := data.ToJSON(rw, prods)
+	if err != nil {
+		p.l.Println("[ERROR] serializing product", err)
 	}
 }
 
 func (p *Products) put(rw http.ResponseWriter, r *http.Request) {
 	prod := data.Product{}
 
-	// fetch the id from the query string
-	id, err := getProductID(r)
-	if err != nil {
-		p.l.Println("[ERROR] unable to find product id in URL", r.URL.Path, err)
-		http.Error(rw, "Missing product id, url should be formatted /products/[id] for PUT requests", http.StatusBadRequest)
-		return
-	}
-
 	// deserialize the body
-	err = prod.FromJSON(r.Body)
+	err := data.FromJSON(r.Body, &prod)
 	if err != nil {
 		p.l.Println("[ERROR] deserializing product", err)
 		http.Error(rw, "Error reading product", http.StatusBadRequest)
 		return
 	}
-
-	// override the product id
-	prod.ID = id
 
 	err = data.UpdateProduct(prod)
 	if err == data.ErrProductNotFound {
@@ -113,7 +128,7 @@ func (p *Products) put(rw http.ResponseWriter, r *http.Request) {
 func (p *Products) post(rw http.ResponseWriter, r *http.Request) {
 	prod := data.Product{}
 
-	err := prod.FromJSON(r.Body)
+	err := data.FromJSON(r.Body, &prod)
 	if err != nil {
 		p.l.Println("[ERROR] deserializing product", err)
 		http.Error(rw, "Error reading product", http.StatusBadRequest)
@@ -126,4 +141,25 @@ func (p *Products) post(rw http.ResponseWriter, r *http.Request) {
 
 	// return the product with the inserted id
 
+}
+
+func (p *Products) delete(rw http.ResponseWriter, r *http.Request) {
+	// fetch the id from the query string
+	id, err := getProductID(r)
+	if err != nil {
+		p.l.Println("[ERROR] unable to find product id in URL", r.URL.Path, err)
+		http.Error(rw, "Missing product id, url should be formatted /products/[id] for PUT requests", http.StatusBadRequest)
+		return
+	}
+
+	err = data.DeleteProduct(id)
+	if err == data.ErrProductNotFound {
+		p.l.Println("[ERROR] product not found", err)
+		http.Error(rw, "Product not found in database", http.StatusNotFound)
+		return
+	}
+
+	p.l.Printf("[DEBUG] Deleted product: %#v\n", id)
+
+	rw.WriteHeader(http.StatusNoContent)
 }

@@ -11,14 +11,12 @@ import (
 // Local is an implementation of the Storage interface which works with the
 // local disk on the current machine
 type Local struct {
-	maxFileSize int // maximum numbber of bytes for files
-	basePath    string
+	basePath string
 }
 
 // NewLocal creates a new Local filesytem with the given base path
 // basePath is the base directory to save files to
-// maxSize is the max number of bytes that a file can be
-func NewLocal(basePath string, maxSize int) (*Local, error) {
+func NewLocal(basePath string) (*Local, error) {
 	p, err := filepath.Abs(basePath)
 	if err != nil {
 		return nil, err
@@ -61,7 +59,6 @@ func (l *Local) Save(path string, contents io.Reader) error {
 
 	// write the contents to the new file
 	// ensure that we are not writing greater than max bytes
-
 	_, err = io.Copy(f, contents)
 	if err != nil {
 		return xerrors.Errorf("Unable to write to file: %w", err)

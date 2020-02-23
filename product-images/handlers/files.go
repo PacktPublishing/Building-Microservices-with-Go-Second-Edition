@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-images/files"
 	"github.com/gorilla/mux"
@@ -11,37 +12,47 @@ import (
 
 // Files is a handler for reading and writing files
 type Files struct {
-	log   hclog.Logger
-	store files.Storage
+	log     hclog.Logger
+	store   files.Storage
+	maxSize int64
 }
 
 // NewFiles creates a new File handler
-func NewFiles(s files.Storage, l hclog.Logger) *Files {
-	return &Files{store: s, log: l}
+func NewFiles(s files.Storage, maxSize int64, l hclog.Logger) *Files {
+	return &Files{store: s, maxSize: maxSize, log: l}
 }
 
 // ServeHTTP implements the http.Handler interface
 func (f *Files) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
+	// if the content length is greater than the max reject the request
+	if r.ContentLength > f.maxSize {
+		f.log.Error("Content length too large", "length", r.ContentLength)
+		http.Error(rw, "Unable to save file, content too large", http.StatusBadRequest)
+		return
+	}
+
+	// is this a multi-part form post
+	if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
+		f.handleMultipart(rw, r)
+		return
+	}
+
+	f.saveFile(rw, r)
+}
+
+// saveFile saves the contents of the request to a file from the request
+func (f *Files) saveFile(rw http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	fn := vars["filename"]
 
-	f.log.Info("Handle POST", "id", id, "filename", fn)
+	f.log.Info("handle standar post", "id", id, "filename", fn)
 
-	// check that the filepath is a valid name and file
-	f.saveFile(id, fn, rw, r)
-}
+	// create a MaxBytesReader to ensure we do not read more than our max
+	// over max size
+	r.Body = http.MaxBytesReader(rw, r.Body, f.maxSize)
 
-func (f *Files) invalidURI(uri string, rw http.ResponseWriter) {
-	f.log.Error("Invalid path", "path", uri)
-	http.Error(rw, "Invalid file path should be in the format: /[id]/[filepath]", http.StatusBadRequest)
-}
-
-// saveFile saves the contents of the request to a file
-func (f *Files) saveFile(id, path string, rw http.ResponseWriter, r *http.Request) {
-	f.log.Info("Save file for product", "id", id, "path", path)
-
-	fp := filepath.Join(id, path)
+	fp := filepath.Join(id, fn)
 	err := f.store.Save(fp, r.Body)
 	if err != nil {
 		f.log.Error("Unable to save file", "error", err)
@@ -49,61 +60,46 @@ func (f *Files) saveFile(id, path string, rw http.ResponseWriter, r *http.Reques
 	}
 }
 
-// get the file from the store and returns it to the user in a gzipped format
-func (f *Files) getFile(id, path string, rw http.ResponseWriter, r *http.Request) {
-	f.log.Info("Get file for product", "id", id, "path", path)
+// handleMultipart handles multipart files
+func (f *Files) handleMultipart(rw http.ResponseWriter, r *http.Request) {
+	f.log.Info("Handle multipart POST")
 
+	// Can be used to parse the multipart data but
+	// will read the whole file
+	// r.ParseForm()
+
+	// not more efficient that ParseForm since the file has to be saved
+	// to a temp file until the ID is known
 	/*
-		fp := filepath.Join(id, path)
-		fr, err := f.store.Get(fp)
+		mr, err := r.MultipartReader()
 		if err != nil {
-			f.log.Error("Unable to get file", "file", fp, "error", err)
-			http.Error(rw, "Unable to find file", http.StatusNotFound)
-			return
-		}
-		defer fr.Close()
-
-		// set the filetpe header
-		// DetectContentType() function only uses the first 512 bytes
-		d := make([]byte, 512)
-		_, err = fr.Read(d)
-		if err != nil {
-			f.log.Error("Unable to read file headers", "file", fp, "error", err)
-			http.Error(rw, "Unable to find file", http.StatusInternalServerError)
+			f.log.Error("Unable to read data", "error", err)
+			http.Error(rw, "Unable to read multipart data", http.StatusBadRequest)
 			return
 		}
 
-		// roll back the stream
-		fr.Seek(0, 0)
+		for {
+			np, err := mr.NextPart()
+			if err == io.EOF {
+				// done
+				return
+			}
 
-		// detect the content type
-		ct := http.DetectContentType(d)
-		if ct != "" {
-			// detected content type
-			f.log.Debug("Detected content type", "type", ct, "file", fp)
-			rw.Header().Add("Content-Type", ct)
-		} else {
-			// fall back to default
-			f.log.Debug("Unable to detect content type", "file", fp)
-			rw.Header().Add("Content-Type", "application/octet-stream")
+			if err != nil {
+				f.log.Error("Unable to read data", "error", err)
+				http.Error(rw, "Unable to read multipart data", http.StatusBadRequest)
+				return
+			}
+
+			switch np.FormName() {
+			case "id":
+				return
+			case "file":
+				// read the file
+
+				return
+			}
+
 		}
-
-		// if client cant handle gzip send plain
-		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
-			f.log.Debug("Unable to handle gzipped", "file", fp)
-			io.Copy(rw, fr)
-			return
-		}
-
-		// client can handle gziped content send gzipped to speed up transfer
-		// set the content encoding header for gzip
-		rw.Header().Add("Content-Encoding", "gzip")
-
-		// wrap the default writer in a gzip writer
-		gw := gzip.NewWriter(rw)
-		defer gw.Close()
-
-		// write the file
-		io.Copy(gw, fr)
 	*/
 }

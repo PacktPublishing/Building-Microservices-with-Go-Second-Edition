@@ -9,14 +9,15 @@ import (
 
 	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-images/files"
 	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-images/handlers"
+	gohandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	hclog "github.com/hashicorp/go-hclog"
 	"github.com/nicholasjackson/env"
 )
 
-var bindAddress = env.String("BIND_ADDRESS", false, ":9090", "Bind address for the server")
+var bindAddress = env.String("BIND_ADDRESS", false, ":9091", "Bind address for the server")
 var logLevel = env.String("LOG_LEVEL", false, "debug", "Log output level for the server [debug, info, trace]")
-var basePath = env.String("BASE_PATH", false, "/tmp/images", "Base path to save images")
+var basePath = env.String("BASE_PATH", false, "./filestore", "Base path to save images")
 
 func main() {
 
@@ -34,14 +35,15 @@ func main() {
 
 	// create the storage class, use local storage
 	// max filesize 5MB
-	stor, err := files.NewLocal(*basePath, 1024*1000*5)
+	maxSize := 1024 * 1024 * 5
+	stor, err := files.NewLocal(*basePath, maxSize)
 	if err != nil {
 		l.Error("Unable to create storage", "error", err)
 		os.Exit(1)
 	}
 
 	// create the handlers
-	fh := handlers.NewFiles(stor, l)
+	fh := handlers.NewFiles(stor, maxSize, l)
 
 	// create a new serve mux and register the handlers
 	sm := mux.NewRouter()
@@ -54,11 +56,14 @@ func main() {
 
 	postRouter := sm.Methods(http.MethodPost).Subrouter()
 	postRouter.Handle("/{id:[0-9]+}/{filename:[a-zA-Z]+\\.[a-z]{3}}", fh)
+	postRouter.Handle("/", fh) // multipart files
+
+	ch := gohandlers.CORS(gohandlers.AllowedOrigins([]string{"*"}))
 
 	// create a new server
 	s := http.Server{
 		Addr:         *bindAddress,      // configure the bind address
-		Handler:      sm,                // set the default handler
+		Handler:      ch(sm),            // set the default handler
 		ErrorLog:     sl,                // the logger for the server
 		ReadTimeout:  5 * time.Second,   // max time to read request from the client
 		WriteTimeout: 10 * time.Second,  // max time to write response to the client

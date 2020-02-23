@@ -18,20 +18,20 @@ type Product struct {
 	SKU         string  `json:"sku"`
 }
 
-// FromJSON deserializes the object from JSON string
-// in an io.Reader
-func (p *Product) FromJSON(r io.Reader) error {
-	d := json.NewDecoder(r)
-	return d.Decode(p)
-}
-
 // Products defines a slice of Product
 type Products []*Product
 
+// FromJSON deserializes the object from JSON string
+// in an io.Reader
+func FromJSON(r io.Reader, obj interface{}) error {
+	d := json.NewDecoder(r)
+	return d.Decode(obj)
+}
+
 // ToJSON serializes the Products into a string based JSON format
-func (p *Products) ToJSON(w io.Writer) error {
+func ToJSON(w io.Writer, obj interface{}) error {
 	e := json.NewEncoder(w)
-	return e.Encode(p)
+	return e.Encode(obj)
 }
 
 // GetProducts returns all products from the database
@@ -44,7 +44,7 @@ func GetProducts() Products {
 // If a product is not found this function returns a ProductNotFound error
 func GetProductByID(id int) (*Product, error) {
 	i := findIndexByProductID(id)
-	if id == -1 {
+	if i == -1 {
 		return nil, ErrProductNotFound
 	}
 
@@ -68,11 +68,28 @@ func UpdateProduct(p Product) error {
 }
 
 // AddProduct adds a new product to the database
-func AddProduct(p Product) {
+func AddProduct(p Product) Product {
 	// get the next id in sequence
 	maxID := productList[len(productList)-1].ID
 	p.ID = maxID + 1
 	productList = append(productList, &p)
+
+	return p
+}
+
+// DeleteProduct deletes a product from the database
+// If a product with the given id does not exist in the database
+// this function returns a ProductNotFound error
+func DeleteProduct(id int) error {
+	i := findIndexByProductID(id)
+	if i == -1 {
+		return ErrProductNotFound
+	}
+
+	// remove the product
+	productList = append(productList[:id], productList[id+1:]...)
+
+	return nil
 }
 
 // findIndex finds the index of a product in the database
