@@ -31,7 +31,7 @@ class Admin extends React.Component {
             return;
         };
 
-        this.setState({buttonDisabled: true})
+        this.setState({buttonDisabled: true, toastShow: false})
 
         // create the data
         const data = new FormData()
@@ -45,7 +45,14 @@ class Admin extends React.Component {
             {'content-type': `multipart/form-data; boundary=${data._boundary}`})
         .then(res => {
             console.log(res);
-            this.setState({buttonDisabled: false, toastShow: true, toastText: "Error, unable to upload file"});
+            var toastText = "";
+            if(res.status === 200) {
+                toastText = "Uploaded file";
+            } else {
+                toastText = "Unable to upload file. Error:" +res.statusText;
+            }
+
+            this.setState({buttonDisabled: false, toastShow: true, toastText: toastText});
         }).catch(error => {
             console.log("Err" + error);
             this.setState({buttonDisabled: false, toastShow: true, toastText: "Unable to upload file. " + error});
@@ -54,11 +61,11 @@ class Admin extends React.Component {
 
     changeHandler(event) {
         if(event.target.name === "file"){
-            this.setState({ [event.target.name]: event.target.files[0] });
+            this.setState({ [event.target.name]: event.target.files[0], toastShow: false});
             return
         }
 
-        this.setState({ [event.target.name]: event.target.value });
+        this.setState({ [event.target.name]: event.target.value, toastShow: false});
     }
 
     render() {

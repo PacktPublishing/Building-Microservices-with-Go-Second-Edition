@@ -35,8 +35,8 @@ func main() {
 
 	// create the storage class, use local storage
 	// max filesize 5MB
-	maxSize := 1024 * 1024 * 5
-	stor, err := files.NewLocal(*basePath, maxSize)
+	maxSize := int64(1024 * 1024 * 5)
+	stor, err := files.NewLocal(*basePath)
 	if err != nil {
 		l.Error("Unable to create storage", "error", err)
 		os.Exit(1)
@@ -44,6 +44,7 @@ func main() {
 
 	// create the handlers
 	fh := handlers.NewFiles(stor, maxSize, l)
+	mw := handlers.NewMiddleware(maxSize, l)
 
 	// create a new serve mux and register the handlers
 	sm := mux.NewRouter()
@@ -52,11 +53,12 @@ func main() {
 
 	// problem with FileServer is that it is dumb
 	getRouter.Handle("/{id:[0-9]+}/{filename:[a-zA-Z]+\\.[a-z]{3}}", http.FileServer(http.Dir(*basePath)))
-	getRouter.Use(handlers.GZipResponseMiddleware)
+	getRouter.Use(mw.GZipResponseMiddleware)
 
 	postRouter := sm.Methods(http.MethodPost).Subrouter()
-	postRouter.Handle("/{id:[0-9]+}/{filename:[a-zA-Z]+\\.[a-z]{3}}", fh)
-	postRouter.Handle("/", fh) // multipart files
+	postRouter.HandleFunc("/{id:[0-9]+}/{filename:[a-zA-Z]+\\.[a-z]{3}}", fh.SaveFileREST)
+	postRouter.HandleFunc("/", fh.SaveMultipart) // multipart files
+	postRouter.Use(mw.CheckContentLengthMiddleware)
 
 	ch := gohandlers.CORS(gohandlers.AllowedOrigins([]string{"*"}))
 

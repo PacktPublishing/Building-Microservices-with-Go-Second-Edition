@@ -1,9 +1,10 @@
 package handlers
 
 import (
+	"io"
 	"net/http"
 	"path/filepath"
-	"strings"
+	"strconv"
 
 	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-images/files"
 	"github.com/gorilla/mux"
@@ -22,26 +23,8 @@ func NewFiles(s files.Storage, maxSize int64, l hclog.Logger) *Files {
 	return &Files{store: s, maxSize: maxSize, log: l}
 }
 
-// ServeHTTP implements the http.Handler interface
-func (f *Files) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	// if the content length is greater than the max reject the request
-	if r.ContentLength > f.maxSize {
-		f.log.Error("Content length too large", "length", r.ContentLength)
-		http.Error(rw, "Unable to save file, content too large", http.StatusBadRequest)
-		return
-	}
-
-	// is this a multi-part form post
-	if strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
-		f.handleMultipart(rw, r)
-		return
-	}
-
-	f.saveFile(rw, r)
-}
-
-// saveFile saves the contents of the request to a file from the request
-func (f *Files) saveFile(rw http.ResponseWriter, r *http.Request) {
+// SaveFileREST saves the contents of the request to a file from the request
+func (f *Files) SaveFileREST(rw http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 	fn := vars["filename"]
@@ -52,17 +35,30 @@ func (f *Files) saveFile(rw http.ResponseWriter, r *http.Request) {
 	// over max size
 	r.Body = http.MaxBytesReader(rw, r.Body, f.maxSize)
 
-	fp := filepath.Join(id, fn)
-	err := f.store.Save(fp, r.Body)
-	if err != nil {
-		f.log.Error("Unable to save file", "error", err)
-		http.Error(rw, "Unable to save file", http.StatusInternalServerError)
-	}
+	f.saveFile(id, fn, rw, r.Body)
 }
 
-// handleMultipart handles multipart files
-func (f *Files) handleMultipart(rw http.ResponseWriter, r *http.Request) {
+// SaveMultipart handles multipart files
+func (f *Files) SaveMultipart(rw http.ResponseWriter, r *http.Request) {
 	f.log.Info("Handle multipart POST")
+	err := r.ParseMultipartForm(f.maxSize)
+	if err != nil {
+		f.log.Error("Unable to parse form", "error", err)
+		http.Error(rw, "Unable to read multipart data", http.StatusBadRequest)
+		return
+	}
+
+	// check we have an id and a file
+	id, _ := strconv.Atoi(r.FormValue("id"))
+	ff, fh, err := r.FormFile("file")
+	if id < 1 || err != nil {
+		f.log.Error("Unable to validate form")
+		http.Error(rw, "Please provide a valid id and file to upload", http.StatusPreconditionFailed)
+		return
+	}
+
+	// save the file
+	f.saveFile(r.FormValue("id"), fh.Filename, rw, ff)
 
 	// Can be used to parse the multipart data but
 	// will read the whole file
@@ -102,4 +98,16 @@ func (f *Files) handleMultipart(rw http.ResponseWriter, r *http.Request) {
 
 		}
 	*/
+}
+
+func (f *Files) saveFile(id, name string, rw http.ResponseWriter, r io.ReadCloser) {
+	defer r.Close()
+	r = http.MaxBytesReader(rw, r, f.maxSize)
+
+	fp := filepath.Join(string(id), name)
+	err := f.store.Save(fp, r)
+	if err != nil {
+		f.log.Error("Unable to save file", "error", err)
+		http.Error(rw, "Unable to save file", http.StatusInternalServerError)
+	}
 }

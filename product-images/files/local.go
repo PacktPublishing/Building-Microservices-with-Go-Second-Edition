@@ -33,7 +33,7 @@ func (l *Local) Save(path string, contents io.Reader) error {
 
 	// get the directory and make sure it exists
 	d := filepath.Dir(fp)
-	err := os.MkdirAll(d, os.ModeDir)
+	err := os.MkdirAll(d, os.ModePerm)
 	if err != nil {
 		return xerrors.Errorf("Unable to create directory: %w", err)
 	}
