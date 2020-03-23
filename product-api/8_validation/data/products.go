@@ -1,10 +1,8 @@
 package data
 
 import (
-	"regexp"
-	"encoding/json"
 	"fmt"
-	"io"
+	"regexp"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -17,15 +15,8 @@ type Product struct {
 	ID          int     `json:"id"`
 	Name        string  `json:"name" validate:"required"`
 	Description string  `json:"description"`
-	Price       float32 `json:"price" validate:"required,gt=0"`
+	Price       float32 `json:"price" validate:"required,gt=0.1,lt=10"`
 	SKU         string  `json:"sku" validate:"sku"`
-}
-
-// FromJSON deserializes the object from JSON string
-// in an io.Reader
-func (p *Product) FromJSON(r io.Reader) error {
-	d := json.NewDecoder(r)
-	return d.Decode(p)
 }
 
 // Validate the product
@@ -50,12 +41,6 @@ func validateSKU(fl validator.FieldLevel) bool {
 
 // Products defines a slice of Product
 type Products []*Product
-
-// ToJSON serializes the Products into a string based JSON format
-func (p *Products) ToJSON(w io.Writer) error {
-	e := json.NewEncoder(w)
-	return e.Encode(p)
-}
 
 // GetProducts returns all products from the database
 func GetProducts() Products {

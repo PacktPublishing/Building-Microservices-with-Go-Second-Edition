@@ -1,9 +1,7 @@
 package data
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 )
 
 // ErrProductNotFound is an error raised when a product can not be found in the database
@@ -18,21 +16,8 @@ type Product struct {
 	SKU         string  `json:"sku"`
 }
 
-// FromJSON deserializes the object from JSON string
-// in an io.Reader
-func (p *Product) FromJSON(r io.Reader) error {
-	d := json.NewDecoder(r)
-	return d.Decode(p)
-}
-
 // Products defines a slice of Product
 type Products []*Product
-
-// ToJSON serializes the Products into a string based JSON format
-func (p *Products) ToJSON(w io.Writer) error {
-	e := json.NewEncoder(w)
-	return e.Encode(p)
-}
 
 // GetProducts returns all products from the database
 func GetProducts() Products {

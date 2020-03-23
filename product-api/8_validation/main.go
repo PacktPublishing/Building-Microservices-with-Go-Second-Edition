@@ -8,7 +8,7 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api/7_Gorilla/handlers"
+	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api/8_validation/handlers"
 	"github.com/gorilla/mux"
 	"github.com/nicholasjackson/env"
 )
@@ -28,14 +28,15 @@ func main() {
 	sm := mux.NewRouter()
 
 	getR := sm.Methods("GET").Subrouter()
-	getR.HandleFunc("/products", ph.GET)
+	getR.HandleFunc("/products", ph.ListProducts)
+	getR.HandleFunc("/products/{id:[0-9]+}", ph.ListSingle)
 
 	putR := sm.Methods("PUT").Subrouter()
-	putR.HandleFunc("/products/{id:[0-9]+}", ph.PUT)
+	putR.HandleFunc("/products", ph.UpdateProduct)
 	putR.Use(ph.MiddlewareValidateProduct)
 
 	postR := sm.Methods("POST").Subrouter()
-	postR.HandleFunc("/products", ph.POST)
+	postR.HandleFunc("/products", ph.CreateProduct)
 	postR.Use(ph.MiddlewareValidateProduct)
 
 	// create a new server

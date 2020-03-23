@@ -4,6 +4,7 @@ github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition v0.0.0-
 github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition v0.0.0-20200127085829-631d14b3c4bb h1:fnT/YU1XprsKOgNY3ZuHcu37vc/vedrnPDGDxQSCXQM=
 github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition v0.0.0-20200202150504-a08ff26e49fb h1:AjhgzoJyVMzQbdh+261K8vdvemnvMga5nPkcI5icpNc=
 github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition v0.0.0-20200209201455-98fbe47d6ce9 h1:o9qr/dUh9Sn5aYvfrYmqVC0dkzwHBTZnZMITNjxy6Vw=
+github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition v0.0.0-20200223103047-6a431ba0ef1d h1:BhIcMY8PwxT1CysFY4vOZP1MjpHKYUskSqLs1E+KVE8=
 github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api v0.0.0-20200114090946-8b8fca2b7f26 h1:N1hxTjviEEz55uEBvSZtqZXMBPjUMsou/ue9XHJPPNg=
 github.com/PuerkitoBio/purell v1.1.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
 github.com/PuerkitoBio/purell v1.1.1 h1:WEQqlqaGbrPkxLJWfBwQmfEAE1Z7ONdDLqrN38tNFfI=

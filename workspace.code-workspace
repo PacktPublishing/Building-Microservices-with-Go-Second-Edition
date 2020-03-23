@@ -1,0 +1,22 @@
+{
+	"folders": [
+		{
+			"path": "frontend"
+		},
+		{
+			"path": "product-images"
+		},
+		{
+			"path": "product-api/6_REST"
+		},
+		{
+			"path": "product-api/8_validation"
+		},
+		{
+			"path": "product-api/9_docs"
+		}
+	],
+	"settings": {
+		"git.ignoreLimitWarning": true
+	}
+}

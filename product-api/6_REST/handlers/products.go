@@ -57,21 +57,18 @@ func (p *Products) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 // getProductID returns the product ID from the URL
 func getProductID(r *http.Request) (int, error) {
-	// parse the product id from the url
-	re := regexp.MustCompile(`\/products\/([0-9]+)`)
+	// Parse the product id from the URI
+	re := regexp.MustCompile(`^\/products\/([0-9]+)$`)
 	m := re.FindAllStringSubmatch(r.URL.Path, -1)
 
-	// if there is more than one match the URL is invalid
-	if len(m) != 1 {
+	// We should have one match which contains two groups
+	// anything else is an invalid URI
+	if len(m) != 1 || len(m[0]) != 2 {
 		return -1, ErrInvalidProductPath
 	}
 
-	// there should be two match groups the second contains the id
-	if len(m[0]) != 2 {
-		return -1, ErrInvalidProductPath
-	}
-
-	// convert the id into an integer and return
+	// Convert the id into an integer and return
+	// the regex ensures that the second group is an integer
 	return strconv.Atoi(m[0][1])
 }
 
