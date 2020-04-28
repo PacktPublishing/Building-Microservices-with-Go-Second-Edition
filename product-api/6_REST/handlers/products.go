@@ -20,7 +20,7 @@ func NewProducts(l *log.Logger) *Products {
 	return &Products{l}
 }
 
-// ErrInvalidProductPath error message 
+// ErrInvalidProductPath error message
 var ErrInvalidProductPath = fmt.Errorf("Invalid Path, path should be /products/[id]")
 
 // ServeHTTP implements the http.Handler interface
@@ -37,6 +37,11 @@ func (p *Products) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 
 	if r.Method == http.MethodPost {
 		p.post(rw, r)
+		return
+	}
+
+	if r.Method == http.MethodDelete {
+		p.delete(rw, r)
 		return
 	}
 
@@ -125,5 +130,9 @@ func (p *Products) post(rw http.ResponseWriter, r *http.Request) {
 	p.l.Printf("[DEBUG] Inserted product: %#v\n", prod)
 
 	// return the product with the inserted id
+
+}
+
+func (p *Products) delete(rw http.ResponseWriter, r *http.Request) {
 
 }

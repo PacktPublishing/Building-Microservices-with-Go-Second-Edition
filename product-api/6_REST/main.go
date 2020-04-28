@@ -20,11 +20,11 @@ func main() {
 
 	l := log.New(os.Stdout, "products-api ", log.LstdFlags)
 
-	// create the handlers
-	ph := handlers.NewProducts(l)
-
 	// create a new serve mux and register the handlers
 	sm := http.NewServeMux()
+
+	// create the handlers
+	ph := handlers.NewProducts(l)
 
 	// will handle URLS for:
 	// /products/
