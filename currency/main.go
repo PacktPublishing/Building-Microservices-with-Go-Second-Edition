@@ -5,10 +5,10 @@ import (
 	"net"
 	"os"
 
+	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/currency/data"
+	protos "github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/currency/protos/currency"
+	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/currency/server"
 	"github.com/hashicorp/go-hclog"
-	"github.com/nicholasjackson/building-microservices-youtube/currency/data"
-	protos "github.com/nicholasjackson/building-microservices-youtube/currency/protos/currency"
-	"github.com/nicholasjackson/building-microservices-youtube/currency/server"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -16,10 +16,9 @@ import (
 func main() {
 	log := hclog.Default()
 
-	// get the latest exchange rates from the ECB
-	er, err := data.NewRates(log)
+	rates, err := data.NewRates(log)
 	if err != nil {
-		log.Error("Unable to get excange rates", "error", err)
+		log.Error("Unable to generate rates", "error", err)
 		os.Exit(1)
 	}
 
@@ -27,7 +26,7 @@ func main() {
 	gs := grpc.NewServer()
 
 	// create an instance of the Currency server
-	c := server.NewCurrency(er, log)
+	c := server.NewCurrency(rates, log)
 
 	// register the currency server
 	protos.RegisterCurrencyServer(gs, c)
@@ -35,8 +34,6 @@ func main() {
 	// register the reflection service which allows clients to determine the methods
 	// for this gRPC service
 	reflection.Register(gs)
-
-	log.Info("Starting server on :9092")
 
 	// create a TCP socket for inbound server connections
 	l, err := net.Listen("tcp", fmt.Sprintf(":%d", 9092))
