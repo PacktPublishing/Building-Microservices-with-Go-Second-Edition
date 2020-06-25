@@ -1,4 +1,5 @@
 syntax = "proto3";
+package example;
 
 // Scalar Value types for how Protocol Buffers translate to Go 
 // types can be found in the folowing document.
@@ -13,21 +14,12 @@ message Product {
   string sku = 5; // equivalent to Go string
 }
 
-// Handling dates
-// Dates are not part of the ProtocolBuffers specification, to work round this we can define a message
-// called DateTime which contains the number of nanoseconds since 1/1/1970. Mostly all programming
-// languages will be able to convert to and from this date
-message DateTime {
-  int64 nanoseconds = 1; // nanoseconds elapsed since January 1, 1970 UTC
-}
-
 // Embedding messages
 // Messages can be used as types in other messages, they can either use 
 // external messages or embed their own messages.
 message Order {
   Product product = 1;
-  DateTime order_date = 2;
-  Customer customer = 3;
+  Customer customer = 2;
 
   message Customer {
     string name = 1;
@@ -48,15 +40,15 @@ message ServerOrders {
 
 // Maps
 // messages can contain maps map<key, value>
-message ProductPrice {
+message RestaurantOrders {
   // maps can contain scalar types as values
-  map<string, double> currency_price = 1;
+  map<string, double> restaurant_order_count = 1;
 
   // maps can contain messages as values
-  map<string, DateTime> currency_last_change_date = 2;
+  map<string, ServerOrders> restaurant_server_orders = 2;
 
   // maps can NOT contain messages as keys
-  // map<DateTime, string> date_currency_changed = 3;
+  // map<Server, double> server_order_count = 3;
 }
 
 // Enumerations
@@ -88,9 +80,11 @@ message Recipie {
 // Import messages from external files
 // files must be relative to this proto file
 import "google/rpc/status.proto"; 
+import "google/protobuf/timestamp.proto"; 
 
 message ErrorMessage {
     google.rpc.Status error = 1; // include the standard rpc status message used in gRPC errors
+    google.protobuf.Timestamp time = 2; // dates are not scalar but you can use protobuf.Timestamp
 }
 
 // Referencing anomous types using the any type
