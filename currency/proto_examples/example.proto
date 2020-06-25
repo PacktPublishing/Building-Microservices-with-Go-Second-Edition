@@ -1,0 +1,122 @@
+syntax = "proto3";
+
+// Scalar Value types for how Protocol Buffers translate to Go 
+// types can be found in the folowing document.
+// https://developers.google.com/protocol-buffers/docs/proto3#scalar
+
+// Simple message with scalar types
+message Product {
+	int32 id = 1; // equivalent to Go int32
+	string name = 2; // equivalent to Go string
+	string description = 3; // equivalent to Go string
+	double price = 4; // equivalent to Go float64
+  string sku = 5; // equivalent to Go string
+}
+
+// Handling dates
+// Dates are not part of the ProtocolBuffers specification, to work round this we can define a message
+// called DateTime which contains the number of nanoseconds since 1/1/1970. Mostly all programming
+// languages will be able to convert to and from this date
+message DateTime {
+  int64 nanoseconds = 1; // nanoseconds elapsed since January 1, 1970 UTC
+}
+
+// Embedding messages
+// Messages can be used as types in other messages, they can either use 
+// external messages or embed their own messages.
+message Order {
+  Product product = 1;
+  DateTime order_date = 2;
+  Customer customer = 3;
+
+  message Customer {
+    string name = 1;
+    string phone = 2;
+  }
+}
+
+// Lists
+// Messages can contain lists of scalar types or messages using the repeated keyword
+message ServerOrders {
+  Server server = 1;
+  repeated Order order = 2;
+  
+  message Server {
+    string name = 1;
+  }
+}
+
+// Maps
+// messages can contain maps map<key, value>
+message ProductPrice {
+  // maps can contain scalar types as values
+  map<string, double> currency_price = 1;
+
+  // maps can contain messages as values
+  map<string, DateTime> currency_last_change_date = 2;
+
+  // maps can NOT contain messages as keys
+  // map<DateTime, string> date_currency_changed = 3;
+}
+
+// Enumerations
+enum Diet {
+  VEGAN = 0; // default item, all enums must have a default
+  VEGITARIAN = 1;
+  PESCATARIAN = 2;
+  GLUTEN_FREE = 3;
+  DAIRY_FREE = 4;
+}
+
+message Recipie {
+  string name = 1;
+  repeated Diet suitability = 2; // enums can be lists
+
+  Available available = 3; // enums can use embedded types 
+
+  enum Available {
+    option allow_alias = true; // allow enum items to share a value, default false
+    ALL_DAY = 0; 
+    LUNCH = 1; 
+    BRUNCH = 1; // shares a value with LUNCH
+    DINNER = 2;
+  }
+}
+
+// Using standard types and importing
+
+// Import messages from external files
+// files must be relative to this proto file
+import "google/rpc/status.proto"; 
+
+message ErrorMessage {
+    google.rpc.Status error = 1; // include the standard rpc status message used in gRPC errors
+}
+
+// Referencing anomous types using the any type
+import "google/protobuf/any.proto";
+
+message Ingredients {
+  string name = 1;
+  repeated google.protobuf.Any nutricional_info =2; // represents a list which can contain any protobuf message
+}
+
+// Define messages which can be of different fixed types
+message SubscribeOrderResponse {
+  // message will contain one of the two types
+  // setting one of these types automatically clears all other members
+  // only the last field you set will have a value
+  oneof message {
+    Order order = 1;
+    google.rpc.Status error = 2;
+  }
+}
+
+service SearchOrders {
+  // Defining rpc for unary operations
+  // We can reference a nested message using the notation parent.message
+  rpc Search(ServerOrders.Server) returns (ServerOrders);
+
+  // Defining streaming RPCs can be done by appending the keyword stream to a message type
+  rpc SubscribeOrders(stream ServerOrders.Server) returns (stream SubscribeOrderResponse);
+}
