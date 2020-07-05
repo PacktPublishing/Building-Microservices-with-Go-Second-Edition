@@ -4,81 +4,26 @@ import (
 	"context"
 	"fmt"
 
-	protos "github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/currency/protos/currency"
+	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/currency/protos/currency"
 	"github.com/hashicorp/go-hclog"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // ErrProductNotFound is an error raised when a product can not be found in the database
 var ErrProductNotFound = fmt.Errorf("Product not found")
 
 type ProductsDB struct {
-	currency protos.CurrencyClient
-	log      hclog.Logger
-	rates    map[string]float64
-	client   protos.Currency_SubscribeRatesClient
+	curClient currency.CurrencyClient
+	log       hclog.Logger
 }
 
 // NewProductsDB returns a Data object for CRUD operations on
 // Products data.
 // This type also handles conversion of currencies through integraiton with the
 // currency service.
-func NewProductsDB(c protos.CurrencyClient, l hclog.Logger) *ProductsDB {
-	pb := &ProductsDB{c, l, make(map[string]float64), nil}
-
-	go pb.handleUpdates()
+func NewProductsDB(c currency.CurrencyClient, l hclog.Logger) *ProductsDB {
+	pb := &ProductsDB{c, l}
 
 	return pb
-}
-
-func (p *ProductsDB) handleUpdates() {
-	sub, err := p.currency.SubscribeRates(context.Background())
-	if err != nil {
-		p.log.Error("Unable to subscribe for rates", "error", err)
-		return
-	}
-
-	p.client = sub
-
-	for {
-		// Recv returns a StreamingRateResponse which can contain one of two messages
-		// RateResponse or an Error.
-		// We need to handle each case separately
-		srr, err := sub.Recv()
-
-		// handle connection errors
-		// this is normally terminal requires a reconnect
-		if err != nil {
-			p.log.Error("Error while waiting for message", "error", err)
-			return
-		}
-
-		// handle a returned error message
-		if ge := srr.GetError(); ge != nil {
-			sre := status.FromProto(ge)
-
-			if sre.Code() == codes.InvalidArgument {
-				errDetails := ""
-				// get the RateRequest serialized in the error response
-				// Details is a collection but we are only returning a single item
-				if d := sre.Details(); len(d) > 0 {
-					p.log.Error("Deets", "d", d)
-					if rr, ok := d[0].(*protos.RateRequest); ok {
-						errDetails = fmt.Sprintf("base: %s destination: %s", rr.GetBase().String(), rr.GetDestination().String())
-					}
-				}
-
-				p.log.Error("Received error from currency service rate subscription", "error", ge.GetMessage(), "details", errDetails)
-			}
-		}
-
-		// handle a rate response
-		if rr := srr.GetRateResponse(); rr != nil {
-			p.log.Info("Recieved updated rate from server", "dest", rr.GetDestination().String())
-			p.rates[rr.Destination.String()] = rr.Rate
-		}
-	}
 }
 
 // GetProducts returns all products from the database
@@ -177,41 +122,15 @@ func findIndexByProductID(id int) int {
 }
 
 func (p *ProductsDB) getRate(destination string) (float64, error) {
-	// if cached return
-	/*
-		if r, ok := p.rates[destination]; ok {
-			return r, nil
-		}
-	*/
-
-	rr := &protos.RateRequest{
-		Base:        protos.Currencies(protos.Currencies_value["EUR"]),
-		Destination: protos.Currencies(protos.Currencies_value[destination]),
+	rr := &currency.RateRequest{
+		Base:        currency.Currencies(currency.Currencies_value["EUR"]),
+		Destination: currency.Currencies(currency.Currencies_value[destination]),
 	}
 
 	// get initial rate
-	resp, err := p.currency.GetRate(context.Background(), rr)
+	resp, err := p.curClient.GetRate(context.Background(), rr)
 	if err != nil {
-		// convert the GRPC error message
-		grpcError, ok := status.FromError(err)
-		if !ok {
-			// unable to convert grpc error
-			return -1, err
-		}
-
-		// if this is an Invalid Arguments exception santise the message before returning
-		if grpcError.Code() == codes.InvalidArgument {
-			return -1, fmt.Errorf("Unable to retreive exchange rate from currency service: %s", grpcError.Message())
-		}
-	}
-
-	// update cachce
-	p.rates[destination] = resp.Rate
-
-	// subscribe for updates
-	err = p.client.Send(rr)
-	if err != nil {
-		return -1, err
+		return -1, fmt.Errorf("Unable to retreive exchange rate from currency service: %s", err)
 	}
 
 	return resp.Rate, err

@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/signal"
 
 	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/currency/protos/currency"
 	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/currency/server"
 	"github.com/hashicorp/go-hclog"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 func main() {
@@ -23,6 +25,10 @@ func main() {
 	// register the currency server
 	currency.RegisterCurrencyServer(gs, c)
 
+	// register the reflection service which allows clients to determine the methods
+	// for this gRPC service
+	reflection.Register(gs)
+
 	// create a TCP socket for inbound server connections
 	serverAddress := fmt.Sprintf(":%d", 9092)
 	l, err := net.Listen("tcp", serverAddress)
@@ -32,6 +38,19 @@ func main() {
 	}
 
 	// listen for requests
-	log.Info("Starting Currency server", "address", serverAddress)
-	gs.Serve(l)
+	go func() {
+		log.Info("Starting Currency server", "address", serverAddress)
+		gs.Serve(l)
+	}()
+
+	log.Info("Press Ctrl-C to stop service")
+	stopChan := make(chan os.Signal, 1)
+	// register for sig kill and sig interupts
+	signal.Notify(stopChan, os.Interrupt)
+	signal.Notify(stopChan, os.Kill)
+
+	// Block until a signal is received.
+	sig := <-stopChan
+	log.Info("Caught signal, waiting for connections to exit before shutting down server", "signal", sig)
+	gs.GracefulStop()
 }

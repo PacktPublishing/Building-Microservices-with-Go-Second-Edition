@@ -13,15 +13,17 @@ import (
 
 // ListAll handles GET requests and returns all current products
 func (p *Products) ListAll(rw http.ResponseWriter, r *http.Request) {
-	cur := r.URL.Query().Get("currency")
-	p.l.Debug("Get all records", "curency", cur)
-
 	rw.Header().Add("Content-Type", "application/json")
 
+	cur := r.URL.Query().Get("currency")
+
+	p.l.Debug("Get all records", "curency", cur)
 	prods, err := p.db.GetProducts(cur)
 	if err != nil {
-		p.l.Error("Unable to get products")
-
+		p.l.Error("Unable to get products", "error", err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		data.ToJSON(&GenericError{Message: err.Error()}, rw)
+		return
 	}
 
 	err = data.ToJSON(prods, rw)
@@ -39,11 +41,11 @@ func (p *Products) ListAll(rw http.ResponseWriter, r *http.Request) {
 
 // ListSingle handles GET requests
 func (p *Products) ListSingle(rw http.ResponseWriter, r *http.Request) {
+	rw.Header().Add("Content-Type", "application/json")
+
 	id := getProductID(r)
 	cur := r.URL.Query().Get("currency")
 	p.l.Debug("Get record", "id", id, "currency", cur)
-
-	rw.Header().Add("Content-Type", "application/json")
 
 	prod, err := p.db.GetProductByID(id, cur)
 

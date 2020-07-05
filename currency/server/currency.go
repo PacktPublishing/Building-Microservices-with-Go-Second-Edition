@@ -5,6 +5,7 @@ import (
 
 	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/currency/protos/currency"
 	"github.com/hashicorp/go-hclog"
+	"google.golang.org/grpc/metadata"
 )
 
 // Currency is a gRPC server it implements the methods defined by the CurrencyServer interface
@@ -22,7 +23,9 @@ func NewCurrency(l hclog.Logger) *Currency {
 // GetRate implements the CurrencyServer GetRate method and returns the currency exchange rate
 // for the two given currencies.
 func (c *Currency) GetRate(ctx context.Context, rr *currency.RateRequest) (*currency.RateResponse, error) {
-	c.log.Info("Handle request for GetRate", "base", rr.GetBase(), "dest", rr.GetDestination())
+	md, _ := metadata.FromIncomingContext(ctx)
+
+	c.log.Info("Handle request for GetRate", "base", rr.GetBase(), "dest", rr.GetDestination(), "metadata", md)
 
 	return &currency.RateResponse{Base: rr.Base, Destination: rr.Destination, Rate: 1.25}, nil
 }
