@@ -34,7 +34,11 @@ func main() {
 	cc, closeFunc := createCurrencyClient(l)
 	defer closeFunc()
 
-	db := data.NewProductsDB(cc, l)
+	db, err := data.NewProductsDB(cc, l)
+	if err != nil {
+		l.Error("Unable to create ProductsDB", "error", err)
+		os.Exit(1)
+	}
 
 	// create the handlers
 	ch := createHandlers(v, db, l)

@@ -12,18 +12,39 @@ import (
 var ErrProductNotFound = fmt.Errorf("Product not found")
 
 type ProductsDB struct {
-	curClient currency.CurrencyClient
-	log       hclog.Logger
+	curClient    currency.CurrencyClient
+	streamClient currency.Currency_SubscribeRatesClient
+	log          hclog.Logger
 }
 
 // NewProductsDB returns a Data object for CRUD operations on
 // Products data.
 // This type also handles conversion of currencies through integraiton with the
 // currency service.
-func NewProductsDB(c currency.CurrencyClient, l hclog.Logger) *ProductsDB {
-	pb := &ProductsDB{c, l}
+func NewProductsDB(c currency.CurrencyClient, l hclog.Logger) (*ProductsDB, error) {
+	sc, err := c.SubscribeRates(context.Background())
+	if err != nil {
+		return nil, err
+	}
 
-	return pb
+	pb := &ProductsDB{c, sc, l}
+	pb.handleServerMessages()
+
+	return pb, nil
+}
+
+func (p *ProductsDB) handleServerMessages() {
+	go func() {
+		for {
+			rr, err := p.streamClient.Recv()
+			if err != nil {
+				p.log.Error("Received error from server", "error", err)
+				break
+			}
+
+			p.log.Info("Received message from server", "Base", rr.GetBase(), "Dest", rr.GetDestination(), "Rate", rr.GetRate())
+		}
+	}()
 }
 
 // GetProducts returns all products from the database
@@ -131,6 +152,12 @@ func (p *ProductsDB) getRate(destination string) (float64, error) {
 	resp, err := p.curClient.GetRate(context.Background(), rr)
 	if err != nil {
 		return -1, fmt.Errorf("Unable to retreive exchange rate from currency service: %s", err)
+	}
+
+	// subscribe for updates
+	err = p.streamClient.Send(rr)
+	if err != nil {
+		return -1, fmt.Errorf("Unable to subscribe for exchange rates from currency service: %s", err)
 	}
 
 	return resp.Rate, err
