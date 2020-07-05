@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/currency/protos/currency"
 	"github.com/hashicorp/go-hclog"
@@ -77,6 +78,20 @@ func (c *Currency) handleClientMessages(svr currency.Currency_SubscribeRatesServ
 
 func (c *Currency) handleServerMessages(svr currency.Currency_SubscribeRatesServer) chan error {
 	sendError := make(chan error)
+
+	go func() {
+		for {
+			// send a message to the client
+			err := svr.Send(&currency.RateResponse{Base: currency.Currencies_EUR, Destination: currency.Currencies_USD, Rate: 1.25})
+			if err != nil {
+				c.log.Error("Unable to send message to the client", "error", err)
+				sendError <- err
+			}
+
+			// sleep for 5s before retrying
+			time.Sleep(5 * time.Second)
+		}
+	}()
 
 	return sendError
 }
