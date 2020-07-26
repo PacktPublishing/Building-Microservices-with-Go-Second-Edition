@@ -1,0 +1,28 @@
+version: "3.6"
+services:
+  product-api:
+    build: 
+      context: .
+      dockerfile: ./product-api/Dockerfile
+    links:
+      - currency
+    environment:
+      CURRENCY_ADDRESS: currency:9092
+    ports:
+      - 9090:9090
+  
+  currency:
+    build: 
+      context: .
+      dockerfile: ./currency/Dockerfile
+  
+  product-images:
+    build: 
+      context: .
+      dockerfile: ./product-images/Dockerfile
+    ports:
+      - 9091:9091
+    environment:
+      BASE_PATH: /cache/images
+    volumes:
+      - ./cache:/cache
