@@ -1,28 +1,36 @@
 version: "3.6"
+
 services:
+
   product-api:
     build: 
       context: .
-      dockerfile: ./product-api/Dockerfile
+      dockerfile: ./product-api/Dockerfile-multistage
     links:
       - currency
     environment:
       CURRENCY_ADDRESS: currency:9092
     ports:
       - 9090:9090
+    volumes: 
+      - ${GOPATH}/pkg/mod:/go/pkg/mod
   
   currency:
     build: 
       context: .
-      dockerfile: ./currency/Dockerfile
+      dockerfile: ./currency/Dockerfile-multistage
+    volumes: 
+      - ${GOPATH}/pkg/mod:/go/pkg/mod
   
   product-images:
     build: 
       context: .
-      dockerfile: ./product-images/Dockerfile
+      dockerfile: ./product-images/Dockerfile-multistage
     ports:
       - 9091:9091
     environment:
       BASE_PATH: /cache/images
     volumes:
       - ./cache:/cache
+    volumes: 
+      - ${GOPATH}/pkg/mod:/go/pkg/mod

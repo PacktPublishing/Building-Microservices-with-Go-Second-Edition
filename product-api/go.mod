@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition v0.0.0-20200625103204-7e1a3678e9bc // indirect
+	github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/currency v0.0.0-00010101000000-000000000000
 	github.com/go-openapi/errors v0.19.6
 	github.com/go-openapi/runtime v0.19.19
 	github.com/go-openapi/strfmt v0.19.5
