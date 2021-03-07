@@ -1,5 +1,7 @@
 syntax = "proto3";
-package example;
+package proto_examples;
+
+option go_package = "github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/currency/proto_examples";
 
 // Scalar Value types for how Protocol Buffers translate to Go 
 // types can be found in the folowing document.
@@ -7,11 +9,13 @@ package example;
 
 // Simple message with scalar types
 message Product {
-	int32 id = 1; // equivalent to Go int32
-	string name = 2; // equivalent to Go string
-	string description = 3; // equivalent to Go string
-	double price = 4; // equivalent to Go float64
-  string sku = 5; // equivalent to Go string
+  int32 id = 1; // equivalent to Go int32, encoded as variable length
+  int64 category_id = 2; // equivalent to Go int64, encoded as variable length Varint
+  fixed64 department_id = 3; // equivalent to Go int64, encoded as 8 byte number
+	string name = 4; // equivalent to Go string
+	string description = 5; // equivalent to Go string
+	double price = 6; // equivalent to Go float64
+  string sku = 7; // equivalent to Go string
 }
 
 // Embedding messages
