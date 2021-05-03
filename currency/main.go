@@ -6,9 +6,10 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/currency/middleware"
 	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/currency/protos/currency"
 	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/currency/server"
-	"github.com/hashicorp/go-hclog"
+	hclog "github.com/hashicorp/go-hclog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -17,7 +18,14 @@ func main() {
 	log := hclog.Default()
 
 	// create a new gRPC server, use WithInsecure to allow http connections
-	gs := grpc.NewServer()
+	gs := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			middleware.NewUnaryServerRequestLogger(log.Named("middleware-unary")),
+		),
+		grpc.ChainStreamInterceptor(
+			middleware.NewStreamingServerRequestLogger(log.Named("middleware-streaming")),
+		),
+	)
 
 	// create an instance of the Currency server
 	c := server.NewCurrency(log)

@@ -6,6 +6,8 @@ import (
 
 	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/currency/protos/currency"
 	"github.com/hashicorp/go-hclog"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // ErrProductNotFound is an error raised when a product can not be found in the database
@@ -150,6 +152,22 @@ func (p *ProductsDB) getRate(destination string) (float64, error) {
 
 	// get initial rate
 	resp, err := p.curClient.GetRate(context.Background(), rr)
+	statusErr, ok := status.FromError(err)
+	if ok {
+		if statusErr.Code() == codes.InvalidArgument {
+			// get the original response from the details
+			or := statusErr.Details()[0].(*currency.RateRequest)
+			p.log.Error(
+				"Invalid argument passed to GetRate method on currency service",
+				"base", or.Base,
+				"destination:", or.Destination,
+				"error", statusErr.Message(),
+			)
+
+			return -1, fmt.Errorf("Invalid arguments used to call GetRate service: %s", statusErr.Message())
+		}
+	}
+
 	if err != nil {
 		return -1, fmt.Errorf("Unable to retreive exchange rate from currency service: %s", err)
 	}

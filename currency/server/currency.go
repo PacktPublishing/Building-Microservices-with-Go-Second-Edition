@@ -8,7 +8,9 @@ import (
 
 	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/currency/protos/currency"
 	"github.com/hashicorp/go-hclog"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 // Currency is a gRPC server it implements the methods defined by the CurrencyServer interface
@@ -29,6 +31,23 @@ func (c *Currency) GetRate(ctx context.Context, rr *currency.RateRequest) (*curr
 	md, _ := metadata.FromIncomingContext(ctx)
 
 	c.log.Info("Handle request for GetRate", "base", rr.GetBase(), "dest", rr.GetDestination(), "metadata", md)
+
+	// if the base and the destination currency is the same return an error
+	if rr.Base == rr.Destination {
+		// create a new gRPC status
+		statusErr := status.New(codes.InvalidArgument, "Base currency can not be the same as the destination currency")
+
+		// add the request to status payload
+		var err error
+		statusErr, err = statusErr.WithDetails(rr)
+		if err != nil {
+			// Unable to add request to status payload, return an error, this should never happen
+			c.log.Error("Unable to add request to status details", "request", rr, "error", err)
+			return nil, err
+		}
+
+		return nil, statusErr.Err()
+	}
 
 	return &currency.RateResponse{Base: rr.Base, Destination: rr.Destination, Rate: 1.25}, nil
 }

@@ -7,16 +7,16 @@ import (
 	"os/signal"
 	"time"
 
+	grpcMiddleware "github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/currency/middleware"
 	protos "github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/currency/protos/currency"
 	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api/data"
 	"github.com/PacktPublishing/Building-Microservices-with-Go-Second-Edition/product-api/handlers"
+	"github.com/go-openapi/runtime/middleware"
 	ghandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/hashicorp/go-hclog"
 	"github.com/nicholasjackson/env"
 	"google.golang.org/grpc"
-
-	"github.com/go-openapi/runtime/middleware"
 )
 
 var bindAddress = env.String("BIND_ADDRESS", false, ":9090", "Bind address for the server")
@@ -84,7 +84,17 @@ func main() {
 
 func createCurrencyClient(l hclog.Logger) (protos.CurrencyClient, func()) {
 	// create the currency service client
-	conn, err := grpc.Dial(*currencyAddress, grpc.WithInsecure())
+	conn, err := grpc.Dial(
+		*currencyAddress,
+		grpc.WithInsecure(),
+		grpc.WithChainUnaryInterceptor(
+			grpcMiddleware.NewUnaryClientRequestLogger(l.Named("middleware")),
+		),
+		grpc.WithChainStreamInterceptor(
+			grpcMiddleware.NewStreamingClientRequestLogger(l.Named("middleware")),
+		),
+	)
+
 	if err != nil {
 		l.Info("Unable to create client for currency service", "error", err)
 		os.Exit(1)
